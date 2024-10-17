@@ -161,7 +161,6 @@
 
 
 
-
 // src/app/api/auth/google/fetchEmails/route.js
 import { google } from 'googleapis';
 import { connectToDatabase } from '@/lib/database';
@@ -215,21 +214,58 @@ export async function GET(req) {
       });
     }
 
-    const messagePromises = response.data.messages.map((message) =>
-      gmail.users.messages.get({ userId: 'me', id: message.id })
-    );
+    // Helper function to decode Base64 content
+    const decodeBase64 = (str) => {
+      return Buffer.from(str, 'base64').toString('utf-8');
+    };
+
+    // Function to handle email parts and extract HTML or plain text
+    const getMessageBody = (message) => {
+      let htmlPart = null;
+      let plainPart = null;
+
+      const findPart = (parts) => {
+        for (const part of parts) {
+          if (part.mimeType === 'text/html') {
+            htmlPart = part;
+          } else if (part.mimeType === 'text/plain') {
+            plainPart = part;
+          } else if (part.parts) {
+            findPart(part.parts); // Recursive search in nested parts
+          }
+        }
+      };
+
+      if (message.payload.parts) {
+        findPart(message.payload.parts);
+      }
+
+      if (htmlPart && htmlPart.body.data) {
+        return decodeBase64(htmlPart.body.data); // Return HTML content
+      } else if (plainPart && plainPart.body.data) {
+        return decodeBase64(plainPart.body.data); // Fallback to plain text
+      }
+
+      return ''; // Default empty string if no content found
+    };
+
+    // Fetch and decode each message
+    const messagePromises = response.data.messages.map(async (message) => {
+      const msg = await gmail.users.messages.get({ userId: 'me', id: message.id });
+      const body = getMessageBody(msg.data); // Get decoded HTML/plain text body
+
+      return {
+        id: msg.data.id,
+        subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+        from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+        body, // Now contains decoded content
+        timestamp: new Date(parseInt(msg.data.internalDate)),
+      };
+    });
 
     const messages = await Promise.all(messagePromises);
 
-    const formattedMessages = messages.map((message) => ({
-      id: message.data.id,
-      subject: message.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
-      from: message.data.payload.headers.find((h) => h.name === 'From')?.value,
-      body: message.data.snippet,
-      timestamp: new Date(parseInt(message.data.internalDate)),
-    }));
-
-    return new Response(JSON.stringify({ messages: formattedMessages }), {
+    return new Response(JSON.stringify({ messages }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

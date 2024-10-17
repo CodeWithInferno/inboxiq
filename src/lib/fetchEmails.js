@@ -1,3 +1,4 @@
+// src/lib/fetchEmails.js
 import { google } from 'googleapis';
 
 // Function to fetch emails from Gmail
@@ -23,13 +24,11 @@ export const fetchUserEmails = async (userTokens) => {
     const msg = await gmail.users.messages.get({ userId: 'me', id: message.id });
 
     let body = '';
-    
-    // Helper function to extract parts
+
     const getMessageBody = (message) => {
       let htmlPart = null;
       let plainPart = null;
 
-      // If the email has parts, it's multipart, so we need to get the correct one
       if (message.payload.parts) {
         message.payload.parts.forEach((part) => {
           if (part.mimeType === 'text/html') {
@@ -40,7 +39,6 @@ export const fetchUserEmails = async (userTokens) => {
         });
       }
 
-      // Prefer HTML part first, fallback to plain text
       if (htmlPart && htmlPart.body.data) {
         return Buffer.from(htmlPart.body.data, 'base64').toString('utf8');
       } else if (plainPart && plainPart.body.data) {
