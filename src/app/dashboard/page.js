@@ -242,24 +242,22 @@ const Dashboard = () => {
           console.error('Error fetching user data:', error);
         }
       };
-
       const fetchInbox = async () => {
         try {
           console.log('Fetching inbox...');
-          const userTokens = await getUserTokens(user.email); // Fetch user tokens
-          console.log('User tokens:', userTokens);
-          const response = await axios.get('/api/google/fetchEmails', {
+          const response = await axios.get(`/api/auth/google/fetchEmails`, {
             params: {
-              accessToken: userTokens.access_token,
-              refreshToken: userTokens.refresh_token,
+              email: user.email,
             },
           });
+      
           console.log('Inbox response:', response.data);
           setInbox(response.data.messages);
         } catch (error) {
           console.error('Error fetching user emails:', error);
         }
       };
+      
 
       fetchUserData();
       fetchInbox();

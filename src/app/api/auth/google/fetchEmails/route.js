@@ -1,22 +1,195 @@
+// // import { google } from 'googleapis';
+// // import { connectToDatabase } from '@/lib/database';
+
+// // export default async function handler(req, res) {
+// //   // Only allow GET requests
+// //   if (req.method === 'GET') {
+// //     try {
+// //       console.log('Received GET request at /api/auth/google/fetchEmails');
+      
+// //       // Extract email from query parameters
+// //       const { email } = req.query;
+
+// //       // Return error if email is not provided
+// //       if (!email) {
+// //         return res.status(400).json({ message: 'Email is required' });
+// //       }
+
+// //       // Connect to the database
+// //       const db = await connectToDatabase();
+// //       const user = await db.collection('users').findOne({ email });
+
+// //       // Return error if the user or tokens are not found
+// //       if (!user || !user.access_token || !user.refresh_token) {
+// //         return res.status(404).json({ message: 'User tokens not found' });
+// //       }
+
+// //       // Setup OAuth2 client using the user's tokens
+// //       const oauth2Client = new google.auth.OAuth2(
+// //         process.env.GOOGLE_CLIENT_ID,
+// //         process.env.GOOGLE_CLIENT_SECRET
+// //       );
+
+// //       // Set the credentials for the OAuth2 client
+// //       oauth2Client.setCredentials({
+// //         access_token: user.access_token,
+// //         refresh_token: user.refresh_token,
+// //       });
+
+// //       // Create a Gmail instance with the authenticated client
+// //       const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+// //       // Fetch a list of the user's emails (maximum 10 emails)
+// //       const response = await gmail.users.messages.list({
+// //         userId: 'me',
+// //         maxResults: 10, // Adjust the number of emails as necessary
+// //       });
+
+// //       // If no emails are found, return a 404 error
+// //       if (!response.data.messages) {
+// //         return res.status(404).json({ message: 'No emails found' });
+// //       }
+
+// //       // Get the detailed information for each email
+// //       const messagePromises = response.data.messages.map((message) =>
+// //         gmail.users.messages.get({ userId: 'me', id: message.id })
+// //       );
+// //       const messages = await Promise.all(messagePromises);
+
+// //       // Format the fetched messages
+// //       const formattedMessages = messages.map((message) => ({
+// //         id: message.data.id,
+// //         subject: message.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+// //         from: message.data.payload.headers.find((h) => h.name === 'From')?.value,
+// //         body: message.data.snippet,
+// //         timestamp: new Date(parseInt(message.data.internalDate)),
+// //       }));
+
+// //       // Log the formatted messages to the console for debugging
+// //       console.log('Formatted messages:', formattedMessages);
+
+// //       // Return the list of formatted emails
+// //       return res.status(200).json({ messages: formattedMessages });
+
+// //     } catch (error) {
+// //       // Catch and log any errors, then return a 500 response
+// //       console.error('Error in /api/auth/google/fetchEmails:', error);
+// //       return res.status(500).json({ message: 'Internal server error', details: error.message });
+// //     }
+// //   } else {
+// //     // Return a 405 error for methods other than GET
+// //     res.setHeader('Allow', ['GET']);
+// //     return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+// //   }
+// // }
+
+
+
+
+
+// import { google } from 'googleapis';
+// import { connectToDatabase } from '@/lib/mongodb';
+
+// export default async function handler(req, res) {
+//   if (req.method === 'GET') {
+//     try {
+//       const { email } = req.query;
+
+//       if (!email) {
+//         return res.status(400).json({ message: 'Email is required' });
+//       }
+
+//       const db = await connectToDatabase();
+//       const user = await db.collection('users').findOne({ email });
+
+//       if (!user || !user.access_token || !user.refresh_token) {
+//         return res.status(404).json({ message: 'User tokens not found' });
+//       }
+
+//       const oauth2Client = new google.auth.OAuth2(
+//         process.env.GOOGLE_CLIENT_ID,
+//         process.env.GOOGLE_CLIENT_SECRET
+//       );
+
+//       oauth2Client.setCredentials({
+//         access_token: user.access_token,
+//         refresh_token: user.refresh_token,
+//       });
+
+//       // Refresh the access token if expired
+//       const { credentials } = await oauth2Client.refreshAccessToken();
+//       oauth2Client.setCredentials(credentials);
+
+//       const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+//       const response = await gmail.users.messages.list({ userId: 'me', maxResults: 10 });
+
+//       if (!response.data.messages) {
+//         return res.status(404).json({ message: 'No emails found' });
+//       }
+
+//       const messagePromises = response.data.messages.map((message) =>
+//         gmail.users.messages.get({ userId: 'me', id: message.id })
+//       );
+
+//       const messages = await Promise.all(messagePromises);
+
+//       const formattedMessages = messages.map((message) => ({
+//         id: message.data.id,
+//         subject: message.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+//         from: message.data.payload.headers.find((h) => h.name === 'From')?.value,
+//         body: message.data.snippet,
+//         timestamp: new Date(parseInt(message.data.internalDate)),
+//       }));
+
+//       return res.status(200).json({ messages: formattedMessages });
+//     } catch (error) {
+//       console.error('Error in /api/auth/google/fetchEmails:', error);
+//       return res.status(500).json({ message: 'Internal server error', details: error.message });
+//     }
+//   } else {
+//     res.setHeader('Allow', ['GET']);
+//     return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+// src/app/api/auth/google/fetchEmails/route.js
 import { google } from 'googleapis';
 import { connectToDatabase } from '@/lib/database';
 
-export default async function handler(req, res) {
+export async function GET(req) {
   try {
-    console.log('Received request at /api/google/fetchEmails');
-    const { email } = req.query;
+    const { searchParams } = new URL(req.url);
+    const email = searchParams.get('email');
 
     if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
+      return new Response(JSON.stringify({ message: 'Email is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
+    // Connect to the database
     const db = await connectToDatabase();
     const user = await db.collection('users').findOne({ email });
 
     if (!user || !user.access_token || !user.refresh_token) {
-      return res.status(404).json({ message: 'User tokens not found' });
+      return new Response(JSON.stringify({ message: 'User tokens not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
+    // Set up OAuth2 client with Google API
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET
@@ -27,21 +200,27 @@ export default async function handler(req, res) {
       refresh_token: user.refresh_token,
     });
 
-    // Refresh access token if needed
-    const { credentials } = await oauth2Client.refreshAccessToken();
-    oauth2Client.setCredentials(credentials);
-
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+    // Fetch the user's emails (maximum 10)
     const response = await gmail.users.messages.list({
       userId: 'me',
-      maxResults: 10, // Adjust as needed
+      maxResults: 10,
     });
+
+    if (!response.data.messages) {
+      return new Response(JSON.stringify({ message: 'No emails found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     const messagePromises = response.data.messages.map((message) =>
       gmail.users.messages.get({ userId: 'me', id: message.id })
     );
 
     const messages = await Promise.all(messagePromises);
+
     const formattedMessages = messages.map((message) => ({
       id: message.data.id,
       subject: message.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
@@ -50,11 +229,15 @@ export default async function handler(req, res) {
       timestamp: new Date(parseInt(message.data.internalDate)),
     }));
 
-    console.log('Formatted messages:', formattedMessages);
-
-    return res.status(200).json({ messages: formattedMessages });
+    return new Response(JSON.stringify({ messages: formattedMessages }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error('Error in /api/google/fetchEmails:', error);
-    res.status(500).json({ message: 'Internal server error', details: error.message });
+    console.error('Error in /api/auth/google/fetchEmails:', error);
+    return new Response(JSON.stringify({ message: 'Internal server error', details: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
