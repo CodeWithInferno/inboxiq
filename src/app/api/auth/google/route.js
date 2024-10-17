@@ -1,0 +1,37 @@
+import { google } from 'googleapis';
+
+export async function GET(req) {
+  try {
+    console.log('Redirecting to Google OAuth consent screen');
+
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      'http://localhost:3000/api/auth/google/callback' // The same URL should be set in your Google Cloud console
+    );
+
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/userinfo.profile', // User profile scope
+        'https://www.googleapis.com/auth/userinfo.email',   // User email scope
+      ],
+      prompt: 'consent',
+    });
+    
+    // Redirect the user to the Google OAuth URL
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: authUrl,
+      },
+    });
+  } catch (error) {
+    console.error('Error during Google OAuth redirection:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
