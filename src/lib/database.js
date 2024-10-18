@@ -24,7 +24,9 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export async function connectToDatabase() {
-  const client = await clientPromise;
-  const db = client.db('mySaaSApp'); // Replace with your actual database name
+  if (!client) {
+    client = await clientPromise;
+  }
+  const db = client.db('mySaaSApp'); // Ensure this matches your actual MongoDB database name
   return db;
 }

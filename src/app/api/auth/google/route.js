@@ -16,6 +16,12 @@ export async function GET(req) {
         'https://www.googleapis.com/auth/gmail.readonly',
         'https://www.googleapis.com/auth/userinfo.profile', // User profile scope
         'https://www.googleapis.com/auth/userinfo.email',   // User email scope
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/gmail.compose',
+        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/gmail.labels',
+        
+
       ],
       prompt: 'consent',
     });
