@@ -9,7 +9,7 @@ const InboxList = ({
   // Helper function to extract the sender's name
   const getSenderName = (fromField) => {
     const match = fromField.match(/(.*?)(?=\s<)/); // Regex to capture text before "<"
-    return match ? match[0] : fromField; // Return the captured group, or the whole field if no match
+    return match ? match[0] : fromField; 
   };
 
   return (
