@@ -22,6 +22,7 @@ export async function GET(req) {
         'https://www.googleapis.com/auth/gmail.labels',
         'https://www.googleapis.com/auth/gmail.compose',
         'https://www.googleapis.com/auth/gmail.modify',
+        'https://mail.google.com/'
       ],
       prompt: 'consent',
     });

@@ -176,36 +176,47 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage }) => {
         if (iframeRef.current && selectedMessage) {
             const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow.document;
             iframeDoc.open();
-
-            // Check if the email body exists and log it for debugging
-            console.log('Email body:', selectedMessage.body);
-
-            // If the body is not empty, write it to the iframe
-            if (selectedMessage.body) {
-                iframeDoc.write(selectedMessage.body);  // Write the HTML email content inside the iframe
-            } else {
-                iframeDoc.write("<p>No email body content found</p>");  // Fallback message if body is empty
-            }
-
+            iframeDoc.write(selectedMessage.body || "<p>No email body content found</p>");
             iframeDoc.close();
         }
     }, [selectedMessage]);
 
     if (!selectedMessage) return null;
 
-    // Helper function to format the email sending date
-    const formatDate = (dateString) => {
-        if (!dateString) return 'Unknown Date';
-        const date = new Date(parseInt(dateString)); // Parse date in case it's a timestamp
-        return `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+    // Ensure selectedMessage contains the right email
+    const email = selectedMessage.from.match(/<(.+)>/)?.[1] || selectedMessage.from || '';
+
+    const handleMarkAsRead = async () => {
+        try {
+            const email = selectedMessage.from.match(/<(.+)>/)?.[1] || selectedMessage.from || '';
+            const response = await fetch(`/api/messages/markAsRead?id=${selectedMessage.id}&email=${encodeURIComponent(email)}&read=true`, {
+                method: 'POST',
+            });
+            if (response.ok) {
+                alert('Email marked as read');
+            } else {
+                alert('Failed to mark email as read');
+            }
+        } catch (error) {
+            console.error('Error marking email as read:', error);
+        }
     };
+    
 
-    // Extract the sender's name and email properly from the message headers
-    const senderName = selectedMessage?.from?.split('<')[0].trim() || 'Unknown Sender';  // Extract name part before email
-    const senderEmail = selectedMessage?.from?.match(/<(.+)>/)?.[1] || selectedMessage?.from || 'Unknown Email';  // Extract email part
-
-    // Handle the correct field for the date
-    const emailDate = selectedMessage.date || selectedMessage.internalDate || selectedMessage.receivedDate || null;
+    const handleMarkAsUnread = async () => {
+        try {
+            const response = await fetch(`/api/messages/markAsRead?id=${selectedMessage.id}&email=${encodeURIComponent(email)}&read=false`, {
+                method: 'POST',
+            });
+            if (response.ok) {
+                alert('Email marked as unread');
+            } else {
+                alert('Failed to mark email as unread');
+            }
+        } catch (error) {
+            console.error('Error marking email as unread:', error);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full overflow-y-auto">
@@ -217,36 +228,37 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage }) => {
                     </button>
                     <h2 className="font-semibold text-lg">{selectedMessage.subject || '(No Subject)'}</h2>
                 </div>
+                {/* Action Buttons */}
+                <div className="flex items-center space-x-4">
+                    <button className="text-green-500 hover:text-green-700" onClick={handleMarkAsRead}>
+                        Mark as Read
+                    </button>
+                    <button className="text-yellow-500 hover:text-yellow-700" onClick={handleMarkAsUnread}>
+                        Mark as Unread
+                    </button>
+                    <button className="text-red-500 hover:text-red-700" onClick={handleCloseMessage}>
+                        Delete
+                    </button>
+                </div>
             </div>
 
-            {/* Email Header with Sender's Info */}
+            {/* Email Header */}
             <div className="flex items-center justify-between mb-4 bg-gray-50 p-4 rounded-md shadow-sm">
-                {/* Sender's Info */}
-                <div className="flex items-center space-x-4">
-                    <div>
-                        <p className="font-semibold text-gray-900">{senderName}</p>
-                        <p className="text-gray-600 text-sm">{senderEmail}</p>
-                    </div>
+                <div>
+                    <p className="font-semibold text-gray-900">{selectedMessage.from}</p>
+                    <p className="text-gray-600 text-sm">{email}</p> {/* Render email */}
                 </div>
-
-                {/* Sent Date and Time */}
-                <div className="text-right">
-                    <p className="text-gray-600 text-sm">
-                        {emailDate ? formatDate(emailDate) : 'Date not available'}
-                    </p>
-                </div>
+                <p className="text-gray-600 text-sm">
+                    {new Date(parseInt(selectedMessage.timestamp)).toLocaleString()}
+                </p>
             </div>
 
             {/* Email Content Section */}
             <div className="flex-grow">
-                <iframe
-                    ref={iframeRef}
-                    title="Email Content"
-                    className="w-full h-[80vh] border-none"
-                />
+                <iframe ref={iframeRef} title="Email Content" className="w-full h-[80vh] border-none" />
             </div>
 
-            {/* Footer with Last updated and Close button */}
+            {/* Footer */}
             <div className="mt-4 flex justify-between items-center text-gray-600 p-4">
                 <p className="text-sm">Last updated: {new Date().toLocaleDateString()}</p>
                 <button className="text-red-500 hover:text-red-700" onClick={handleCloseMessage}>
@@ -258,3 +270,7 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage }) => {
 };
 
 export default MessageDetails;
+
+
+
+

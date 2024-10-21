@@ -1,14 +1,14 @@
 import { google } from 'googleapis';
 import { connectToDatabase } from '@/lib/database';
 
-export async function GET(req) {
+export async function DELETE(req) {
   try {
     const { searchParams } = new URL(req.url);
     const email = searchParams.get('email');
-    const threadId = searchParams.get('threadId'); // Ensure threadId is being passed!
+    const messageId = searchParams.get('id');
 
-    if (!email || !threadId) {
-      return new Response(JSON.stringify({ message: 'Email and Thread ID are required' }), {
+    if (!email || !messageId) {
+      return new Response(JSON.stringify({ message: 'Email and message ID are required' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -37,46 +37,21 @@ export async function GET(req) {
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // Fetch the thread details by threadId
-    const threadResponse = await gmail.users.threads.get({
+    // Call the Gmail API to delete the message
+    await gmail.users.messages.delete({
       userId: 'me',
-      id: threadId,  // Use the threadId to get the details of this thread
-    });
-
-    if (!threadResponse.data) {
-      return new Response(JSON.stringify({ message: 'Thread not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const threadDetails = threadResponse.data.messages.map((msg) => {
-      const subject = msg.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)';
-      const from = msg.payload.headers.find((h) => h.name === 'From')?.value;
-      const body = msg.payload.parts?.find(part => part.mimeType === 'text/html')?.body?.data;
-      const decodedBody = body ? Buffer.from(body, 'base64').toString('utf-8') : '';
-
-      return {
-        id: msg.id,
-        subject,
-        from,
-        body: decodedBody,
-        timestamp: new Date(parseInt(msg.internalDate)),
-      };
+      id: messageId,
     });
 
     return new Response(
-      JSON.stringify({
-        threadId: threadResponse.data.id,
-        messages: threadDetails,
-      }),
+      JSON.stringify({ message: 'Email deleted successfully' }),
       {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       }
     );
   } catch (error) {
-    console.error('Error in /api/google/fetchThreads:', error);
+    console.error('Error deleting email:', error);
     return new Response(
       JSON.stringify({ message: 'Internal server error', details: error.message }),
       {

@@ -71,10 +71,18 @@ const DashboardPage = () => {
     setLoading(false);
   };
 
-  // Handle when a specific message is selected
+//   // Handle when a specific message is selected
   const handleOpenMessage = (message) => {
     setSelectedMessage(message);
   };
+
+
+
+
+
+
+
+
 
   // Handle closing the message view
   const handleCloseMessage = () => {
