@@ -216,7 +216,6 @@
 
 
 
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -242,30 +241,22 @@ const DashboardPage = () => {
 
   const loaderRef = useRef(null);  // For observing when to load more emails
 
+  // Helper to get Gmail label
   const getGmailLabel = (slug) => {
     switch (slug) {
-      case 'inbox':
-        return 'INBOX';
-      case 'promotions':
-        return 'CATEGORY_PROMOTIONS';
-      case 'social':
-        return 'CATEGORY_SOCIAL';
-      case 'spam':
-        return 'SPAM';
-      case 'trash':
-        return 'TRASH';
-      case 'sent':
-        return 'SENT';
-      case 'drafts':
-        return 'DRAFT';
-      case 'starred':
-        return 'STARRED';
-      default:
-        return 'INBOX';
+      case 'inbox': return 'INBOX';
+      case 'promotions': return 'CATEGORY_PROMOTIONS';
+      case 'social': return 'CATEGORY_SOCIAL';
+      case 'spam': return 'SPAM';
+      case 'trash': return 'TRASH';
+      case 'sent': return 'SENT';
+      case 'drafts': return 'DRAFT';
+      case 'starred': return 'STARRED';
+      default: return 'INBOX';
     }
   };
 
-  // Fetch emails from Gmail API
+  // Fetch emails from Gmail API and classify importance
   const fetchEmails = async (label, email, pageToken = null, query = '') => {
     setLoading(true);
     try {
@@ -274,8 +265,10 @@ const DashboardPage = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Unknown error occurred while fetching emails');
       }
-  
+
       const data = await response.json();
+
+      // After fetching emails, classify them for importance
       const classifiedEmails = await classifyEmails(data.messages);
       setEmails((prevEmails) => [...prevEmails, ...classifiedEmails]);
       setNextPageToken(data.nextPageToken || null);  // Store the next page token
@@ -287,25 +280,25 @@ const DashboardPage = () => {
     setLoading(false);
   };
 
-  // Call the API to classify emails
+  // Call the API to classify emails for importance
   const classifyEmails = async (emails) => {
-    const classifiedEmails = await Promise.all(
+    return await Promise.all(
       emails.map(async (email) => {
-        const emailContent = {
-          subject: email.subject,
-          body: email.snippet, // Modify this if you want to send the full body
-        };
-        const response = await fetch('/api/ai/classifyEmail', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: emailContent }),
-        });
-
-        const { priority } = await response.json();
-        return { ...email, priority };  // Attach the priority to the email object
+        try {
+          const emailContent = { subject: email.subject, body: email.snippet };
+          const response = await fetch('/api/ai/classifyEmail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailContent }),
+          });
+          const { priority } = await response.json();
+          return { ...email, priority };  // Attach priority to the email
+        } catch (error) {
+          console.error('Error classifying email:', error.message);
+          return { ...email, priority: 'Low Priority' }; // Default to low priority if classification fails
+        }
       })
     );
-    return classifiedEmails;
   };
 
   const handleOpenMessage = (message) => {
@@ -314,6 +307,19 @@ const DashboardPage = () => {
       fetchThread(message.threadId); 
     } else {
       console.error('No threadId found for this message.');
+    }
+  };
+
+  const fetchThread = async (threadId) => {
+    try {
+      const response = await fetch(`/api/auth/google/fetchThreads?email=${encodeURIComponent(user.email)}&threadId=${threadId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch thread');
+      }
+      const data = await response.json();
+      setThreadMessages(data.messages || []);
+    } catch (error) {
+      console.error('Error fetching thread:', error.message);
     }
   };
 
@@ -405,6 +411,7 @@ const DashboardPage = () => {
             selectedMessage={selectedMessage}
             threadMessages={threadMessages}
             handleCloseMessage={handleCloseMessage}
+            onDeleteMessage={() => setEmails(emails.filter(e => e.id !== selectedMessage.id))} // Remove email from UI after deletion
           />
         ) : emails.length === 0 ? (
           <div className="flex items-center justify-center h-full">
