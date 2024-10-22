@@ -295,7 +295,7 @@ const DashboardPage = () => {
           subject: email.subject,
           body: email.snippet, // Modify this if you want to send the full body
         };
-        const response = await fetch('/api/classifyEmail', {
+        const response = await fetch('/api/ai/classifyEmail', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: emailContent }),
