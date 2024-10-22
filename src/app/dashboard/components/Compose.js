@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import dynamic from 'next/dynamic';  // Import dynamic from Next.js
+import dynamic from 'next/dynamic'; 
 
-// Dynamically import ReactQuill with SSR disabled
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
 
@@ -10,15 +9,13 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
     to: '',
     subject: '',
   });
-  const [editorHtml, setEditorHtml] = useState('');  // For storing the editor content
+  const [editorHtml, setEditorHtml] = useState(''); 
 
-  // Handle form input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setMessage((prevMessage) => ({ ...prevMessage, [name]: value }));
   };
 
-  // Quill modules configuration
   const modules = {
     toolbar: [
       [{ 'header': '1' }, { 'header': '2' }, { 'font': [] }],
@@ -31,11 +28,10 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
     ],
   };
 
-  // Handle form submission to send the email
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const body = editorHtml;  // Get HTML content from the editor
+    const body = editorHtml; 
 
     try {
       const response = await fetch('/api/messages/sendMail', {
@@ -44,16 +40,16 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
         body: JSON.stringify({
           to: message.to,
           subject: message.subject,
-          body,  // Send HTML content as email body
+          body,
           userEmail,
         }),
       });
 
       if (response.ok) {
         alert('Email sent successfully!');
-        onClose(); // Close modal after sending email
-        setMessage({ to: '', subject: '' }); // Reset form
-        setEditorHtml('');  // Clear editor content
+        onClose();
+        setMessage({ to: '', subject: '' });
+        setEditorHtml(''); 
       } else {
         const data = await response.json();
         alert(`Failed to send email: ${data.message}`);
@@ -64,7 +60,7 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
     }
   };
 
-  if (!isOpen) return null; // If modal is not open, don't render
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
@@ -90,7 +86,6 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
             required
           />
 
-          {/* React Quill Editor */}
           <ReactQuill
             value={editorHtml}
             onChange={setEditorHtml}

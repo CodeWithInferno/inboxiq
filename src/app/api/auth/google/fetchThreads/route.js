@@ -1,88 +1,94 @@
 import { google } from 'googleapis';
-import { connectToDatabase } from '@/lib/database';
+import getUserTokens from '@/lib/getUserTokens';
 
 export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get('email');
+  const threadId = searchParams.get('threadId');
+
+  if (!email || !threadId) {
+    return new Response(JSON.stringify({ message: 'Email and threadId are required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get('email');
-    const threadId = searchParams.get('threadId'); // Ensure threadId is being passed!
+    const userTokens = await getUserTokens(email);
 
-    if (!email || !threadId) {
-      return new Response(JSON.stringify({ message: 'Email and Thread ID are required' }), {
-        status: 400,
+    if (!userTokens || !userTokens.access_token) {
+      return new Response(JSON.stringify({ message: 'User tokens not found or invalid' }), {
+        status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Connect to the database
-    const db = await connectToDatabase();
-    const user = await db.collection('users').findOne({ email });
-
-    if (!user || !user.access_token || !user.refresh_token) {
-      return new Response(JSON.stringify({ message: 'User tokens not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Set up OAuth2 client with Google API
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET
     );
     oauth2Client.setCredentials({
-      access_token: user.access_token,
-      refresh_token: user.refresh_token,
+      access_token: userTokens.access_token,
+      refresh_token: userTokens.refresh_token,
     });
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // Fetch the thread details by threadId
-    const threadResponse = await gmail.users.threads.get({
+    // Fetch the thread using the Gmail API
+    const response = await gmail.users.threads.get({
       userId: 'me',
-      id: threadId,  // Use the threadId to get the details of this thread
+      id: threadId, // Use the threadId parameter from the URL
     });
 
-    if (!threadResponse.data) {
-      return new Response(JSON.stringify({ message: 'Thread not found' }), {
+    if (!response.data || !response.data.messages) {
+      return new Response(JSON.stringify({ message: 'No thread messages found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const threadDetails = threadResponse.data.messages.map((msg) => {
-      const subject = msg.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)';
-      const from = msg.payload.headers.find((h) => h.name === 'From')?.value;
-      const body = msg.payload.parts?.find(part => part.mimeType === 'text/html')?.body?.data;
-      const decodedBody = body ? Buffer.from(body, 'base64').toString('utf-8') : '';
+    // Process each message in the thread
+    const threadMessages = response.data.messages.map((message) => {
+      const decodeBase64 = (data) => {
+        return Buffer.from(data, 'base64').toString('utf-8');
+      };
+
+      const getMessageBody = (message) => {
+        let body = '';
+        const parts = message.payload.parts || [message.payload];
+
+        for (const part of parts) {
+          if (part.mimeType === 'text/html' && part.body?.data) {
+            body = decodeBase64(part.body.data);
+            break;  // Prefer HTML content if available
+          } else if (part.mimeType === 'text/plain' && part.body?.data) {
+            body = decodeBase64(part.body.data);
+          }
+        }
+
+        return body;
+      };
 
       return {
-        id: msg.id,
-        subject,
-        from,
-        body: decodedBody,
-        timestamp: new Date(parseInt(msg.internalDate)),
+        id: message.id,
+        threadId: message.threadId,
+        subject: message.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+        from: message.payload.headers.find((h) => h.name === 'From')?.value,
+        body: getMessageBody(message),
+        snippet: message.snippet,
+        timestamp: new Date(parseInt(message.internalDate)),
       };
     });
 
-    return new Response(
-      JSON.stringify({
-        threadId: threadResponse.data.id,
-        messages: threadDetails,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ messages: threadMessages }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error('Error in /api/google/fetchThreads:', error);
-    return new Response(
-      JSON.stringify({ message: 'Internal server error', details: error.message }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    console.error('Error fetching thread:', error);
+    return new Response(JSON.stringify({ message: 'Internal server error', details: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }

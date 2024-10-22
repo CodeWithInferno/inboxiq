@@ -9,7 +9,7 @@ const openai = new OpenAIApi(configuration);
 export const generateText = async (prompt) => {
   try {
     const response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo", // Or "gpt-4" if available
+      model: "gpt-3.5", // Or "gpt-4" if available
       messages: [
         {
           role: "system", 

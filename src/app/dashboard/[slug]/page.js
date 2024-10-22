@@ -1,3 +1,222 @@
+// 'use client';
+
+// import { useParams } from 'next/navigation';
+// import { useEffect, useState, useRef } from 'react';
+// import { useUser } from '@auth0/nextjs-auth0/client';
+// import Sidebar from '../components/Sidebar';
+// import MessageDetails from '../components/MessageDetails';
+// import Compose from '../components/Compose';
+
+// const DashboardPage = () => {
+//   const { slug } = useParams(); 
+//   const { user, isLoading } = useUser(); 
+//   const [emails, setEmails] = useState([]);
+//   const [labelCounts, setLabelCounts] = useState({});
+//   const [nextPageToken, setNextPageToken] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [selectedMessage, setSelectedMessage] = useState(null);
+//   const [threadMessages, setThreadMessages] = useState([]); 
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [searchMode, setSearchMode] = useState(false);
+//   const [isComposeOpen, setIsComposeOpen] = useState(false);
+
+//   const loaderRef = useRef(null);
+
+//   const getGmailLabel = (slug) => {
+//     switch (slug) {
+//       case 'inbox':
+//         return 'INBOX';
+//       case 'promotions':
+//         return 'CATEGORY_PROMOTIONS';
+//       case 'social':
+//         return 'CATEGORY_SOCIAL';
+//       case 'spam':
+//         return 'SPAM';
+//       case 'trash':
+//         return 'TRASH';
+//       case 'sent':
+//         return 'SENT';
+//       case 'drafts':
+//         return 'DRAFT';
+//       case 'starred':
+//         return 'STARRED';
+//       default:
+//         return 'INBOX';
+//     }
+//   };
+
+//   const fetchEmails = async (label, email, pageToken = null, query = '') => {
+//     setLoading(true);
+//     try {
+//       const response = await fetch(`/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(email)}${pageToken ? `&pageToken=${pageToken}` : ''}&query=${query}`);
+//       if (!response.ok) {
+//         const errorData = await response.json();
+//         throw new Error(errorData.error || 'Unknown error occurred while fetching emails');
+//       }
+
+//       const data = await response.json();
+//       if (Array.isArray(data.messages)) {
+//         setEmails((prevEmails) => [...prevEmails, ...data.messages]);
+//       } else {
+//         setEmails([]);
+//       }
+
+//       setLabelCounts(data.labelCounts || {});
+//       setNextPageToken(data.nextPageToken || null);
+//     } catch (error) {
+//       console.error('Error fetching emails:', error.message);
+//     }
+//     setLoading(false);
+//   };
+
+//   const fetchThread = async (threadId) => {
+//     try {
+//       const response = await fetch(`/api/auth/google/fetchThreads?email=${encodeURIComponent(user.email)}&threadId=${threadId}`);
+//       if (!response.ok) {
+//         throw new Error('Failed to fetch thread');
+//       }
+//       const data = await response.json();
+//       setThreadMessages(data.messages || []);
+//     } catch (error) {
+//       console.error('Error fetching thread:', error.message);
+//     }
+//   };
+
+//   const handleOpenMessage = (message) => {
+//     if (message && message.threadId) {
+//       setSelectedMessage(message);
+//       fetchThread(message.threadId); 
+//     } else {
+//       console.error('No threadId found for this message.');
+//     }
+//   };
+
+//   const handleCloseMessage = () => {
+//     setSelectedMessage(null);
+//     setThreadMessages([]); 
+//   };
+
+//   const handleSearch = (e) => {
+//     e.preventDefault();
+//     setEmails([]); 
+//     setSearchMode(true); 
+//     const label = getGmailLabel(slug);
+//     fetchEmails(label, user.email, null, searchQuery);  
+//   };
+
+//   const handleBackToInbox = () => {
+//     setSearchMode(false);  
+//     setSearchQuery('');    
+//     setEmails([]);         
+//     const label = getGmailLabel('inbox');  
+//     fetchEmails(label, user.email);        
+//   };
+
+//   const openComposeModal = () => {
+//     setIsComposeOpen(true);
+//   };
+
+//   const closeComposeModal = () => {
+//     setIsComposeOpen(false);
+//   };
+
+//   useEffect(() => {
+//     if (user && slug && !searchMode) {
+//       const label = getGmailLabel(slug); 
+//       fetchEmails(label, user.email);
+//     }
+//   }, [slug, user, searchMode]);
+
+//   if (isLoading) {
+//     return (
+//       <div className="flex items-center justify-center h-screen">
+//         <p>Loading user info...</p>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="flex h-screen bg-gray-50">
+//       <Sidebar labelCounts={labelCounts} />
+//       <div className="flex-grow p-6 overflow-y-auto">
+//         <h1 className="text-4xl font-semibold capitalize mb-6 text-gray-800">{slug}</h1>
+
+//         {!selectedMessage && (
+//           <>
+//             <form className="mb-4">
+//               <input
+//                 type="text"
+//                 className="w-full p-2 border rounded-lg focus:outline-none"
+//                 placeholder="Search emails..."
+//                 value={searchQuery}
+//                 onChange={(e) => setSearchQuery(e.target.value)}
+//               />
+//             </form>
+
+//             {searchMode && (
+//               <button className="text-blue-500 hover:text-blue-700 mb-4" onClick={handleBackToInbox}>
+//                 &larr; Back to Inbox
+//               </button>
+//             )}
+
+//             <button
+//               className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 mb-4"
+//               onClick={openComposeModal}
+//             >
+//               Compose
+//             </button>
+//           </>
+//         )}
+
+//         {loading && emails.length === 0 ? (
+//           <p className="text-gray-600">Loading emails...</p>
+//         ) : selectedMessage ? (
+//           <MessageDetails
+//             selectedMessage={selectedMessage}
+//             threadMessages={threadMessages}
+//             handleCloseMessage={handleCloseMessage}
+//           />
+//         ) : emails.length === 0 ? (
+//           <div className="flex items-center justify-center h-full">
+//             <p className="text-lg text-gray-500">No emails found for {slug}</p>
+//           </div>
+//         ) : (
+//           <div className="grid grid-cols-1 gap-4">
+//             {emails.map((email) => (
+//               <div
+//                 key={email.id}
+//                 className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+//                 onClick={() => handleOpenMessage(email)}
+//               >
+//                 <h2 className="font-bold text-lg mb-1">{email.subject || '(No Subject)'}</h2>
+//                 <p className="text-sm text-gray-500 truncate">From: {email.from}</p>
+//                 <p className="text-gray-600 mt-2 truncate">{email.snippet}</p>
+//               </div>
+//             ))}
+//           </div>
+//         )}
+//       </div>
+
+//       <Compose isOpen={isComposeOpen} onClose={closeComposeModal} userEmail={user?.email} />
+//     </div>
+//   );
+// };
+
+// export default DashboardPage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -5,22 +224,24 @@ import { useEffect, useState, useRef } from 'react';
 import { useUser } from '@auth0/nextjs-auth0/client';
 import Sidebar from '../components/Sidebar';
 import MessageDetails from '../components/MessageDetails';
-import Compose from '../components/Compose';  // Import the Compose component
+import Compose from '../components/Compose';
+import { FaExclamationCircle } from 'react-icons/fa';  // Importing icons for the priority indicator
 
 const DashboardPage = () => {
-  const { slug } = useParams();  // Get the slug from the URL (inbox, promotions, social, spam, etc.)
-  const { user, isLoading } = useUser();  // Use Auth0's hook to get the authenticated user
+  const { slug } = useParams(); 
+  const { user, isLoading } = useUser(); 
   const [emails, setEmails] = useState([]);
   const [labelCounts, setLabelCounts] = useState({});
-  const [nextPageToken, setNextPageToken] = useState(null);
+  const [nextPageToken, setNextPageToken] = useState(null);  // Pagination token
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');  // Track search input
-  const [searchMode, setSearchMode] = useState(false);  // Track if search is active
-  const [isComposeOpen, setIsComposeOpen] = useState(false); // Track compose modal state
-  const loaderRef = useRef(null); // Ref for observing when the user reaches the bottom
+  const [threadMessages, setThreadMessages] = useState([]); 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchMode, setSearchMode] = useState(false);
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
 
-  // Helper function to map slug to Gmail label
+  const loaderRef = useRef(null);  // For observing when to load more emails
+
   const getGmailLabel = (slug) => {
     switch (slug) {
       case 'inbox':
@@ -40,11 +261,11 @@ const DashboardPage = () => {
       case 'starred':
         return 'STARRED';
       default:
-        return 'INBOX'; // Fallback to inbox
+        return 'INBOX';
     }
   };
 
-  // Fetch Emails
+  // Fetch emails from Gmail API
   const fetchEmails = async (label, email, pageToken = null, query = '') => {
     setLoading(true);
     try {
@@ -55,59 +276,72 @@ const DashboardPage = () => {
       }
   
       const data = await response.json();
-  
-      if (Array.isArray(data.messages)) {
-        setEmails((prevEmails) => [...prevEmails, ...data.messages]);
-      } else {
-        setEmails([]);
-      }
+      const classifiedEmails = await classifyEmails(data.messages);
+      setEmails((prevEmails) => [...prevEmails, ...classifiedEmails]);
+      setNextPageToken(data.nextPageToken || null);  // Store the next page token
   
       setLabelCounts(data.labelCounts || {});
-      setNextPageToken(data.nextPageToken || null);
     } catch (error) {
       console.error('Error fetching emails:', error.message);
     }
-  
     setLoading(false);
   };
 
-//   // Handle when a specific message is selected
-  const handleOpenMessage = (message) => {
-    setSelectedMessage(message);
+  // Call the API to classify emails
+  const classifyEmails = async (emails) => {
+    const classifiedEmails = await Promise.all(
+      emails.map(async (email) => {
+        const emailContent = {
+          subject: email.subject,
+          body: email.snippet, // Modify this if you want to send the full body
+        };
+        const response = await fetch('/api/classifyEmail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailContent }),
+        });
+
+        const { priority } = await response.json();
+        return { ...email, priority };  // Attach the priority to the email object
+      })
+    );
+    return classifiedEmails;
   };
 
+  const handleOpenMessage = (message) => {
+    if (message && message.threadId) {
+      setSelectedMessage(message);
+      fetchThread(message.threadId); 
+    } else {
+      console.error('No threadId found for this message.');
+    }
+  };
 
-
-
-
-
-
-
-
-  // Handle closing the message view
   const handleCloseMessage = () => {
     setSelectedMessage(null);
+    setThreadMessages([]); 
   };
 
-  // Handle search
   const handleSearch = (e) => {
     e.preventDefault();
-    setEmails([]); // Clear previous emails before searching
-    setSearchMode(true); // Set search mode to true
+    setEmails([]); 
+    setSearchMode(true); 
     const label = getGmailLabel(slug);
-    fetchEmails(label, user.email, null, searchQuery);  // Fetch emails based on search query
+    if (user?.email) {
+      fetchEmails(label, user.email, null, searchQuery);  
+    }
   };
 
-  // Handle going back to inbox
   const handleBackToInbox = () => {
-    setSearchMode(false);  // Exit search mode
-    setSearchQuery('');    // Clear search input
-    setEmails([]);         // Clear the emails
-    const label = getGmailLabel('inbox');  // Get the inbox label
-    fetchEmails(label, user.email);        // Fetch the inbox emails
+    setSearchMode(false);  
+    setSearchQuery('');    
+    setEmails([]);         
+    const label = getGmailLabel('inbox');  
+    if (user?.email) {
+      fetchEmails(label, user.email);        
+    }
   };
 
-  // Handle compose modal
   const openComposeModal = () => {
     setIsComposeOpen(true);
   };
@@ -116,57 +350,47 @@ const DashboardPage = () => {
     setIsComposeOpen(false);
   };
 
-  // Fetch emails when the category (slug) changes or when user is authenticated
   useEffect(() => {
     if (user && slug && !searchMode) {
-      const label = getGmailLabel(slug); // Get Gmail label from slug
+      const label = getGmailLabel(slug); 
       fetchEmails(label, user.email);
     }
   }, [slug, user, searchMode]);
 
-  // Render loading state if the user info is still being loaded
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p>Loading user info...</p>
+        <p className="text-gray-500">Loading user info...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar labelCounts={labelCounts} /> {/* Sidebar for navigation */}
-      
-      <div className="flex-grow p-8 overflow-y-auto">
-        <h1 className="text-4xl font-bold capitalize mb-8 text-gray-900">{slug}</h1>
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar labelCounts={labelCounts} />
+      <div className="flex-grow p-6 overflow-y-auto">
+        <h1 className="text-3xl font-bold capitalize mb-4 text-gray-900">{slug}</h1>
 
-        {/* Conditionally render search bar and compose button only when no message is selected */}
         {!selectedMessage && (
           <>
-            {/* Search Bar */}
-            <form className="mb-6" onSubmit={handleSearch}>
+            <form className="mb-4">
               <input
                 type="text"
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
                 placeholder="Search emails..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </form>
 
-            {/* Back button to exit search mode */}
             {searchMode && (
-              <button 
-                className="mb-4 text-blue-500 hover:text-blue-700" 
-                onClick={handleBackToInbox}
-              >
+              <button className="text-blue-500 hover:text-blue-700 mb-4" onClick={handleBackToInbox}>
                 &larr; Back to Inbox
               </button>
             )}
 
-            {/* Compose button */}
             <button
-              className="bg-blue-500 text-white px-4 py-2 rounded mb-6"
+              className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow hover:bg-blue-700 transition"
               onClick={openComposeModal}
             >
               Compose
@@ -174,12 +398,12 @@ const DashboardPage = () => {
           </>
         )}
 
-        {/* Loading state */}
         {loading && emails.length === 0 ? (
           <p className="text-gray-600">Loading emails...</p>
         ) : selectedMessage ? (
-          <MessageDetails 
-            selectedMessage={selectedMessage} 
+          <MessageDetails
+            selectedMessage={selectedMessage}
+            threadMessages={threadMessages}
             handleCloseMessage={handleCloseMessage}
           />
         ) : emails.length === 0 ? (
@@ -188,29 +412,42 @@ const DashboardPage = () => {
           </div>
         ) : (
           <>
-            <ul className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-4">
               {emails.map((email) => (
-                <li 
-                  key={email.id} 
-                  className="bg-white p-6 rounded-lg shadow-md cursor-pointer"
-                  onClick={() => handleOpenMessage(email)} // Click to open message
+                <div
+                  key={email.id}
+                  className={`relative bg-white p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer ${email.priority === 'High Priority' ? 'border border-red-500' : ''}`}
+                  onClick={() => handleOpenMessage(email)}
                 >
                   <h2 className="font-bold text-xl mb-2">{email.subject || '(No Subject)'}</h2>
-                  <p className="text-sm text-gray-600">From: {email.from}</p>
-                  <p className="mt-4">{email.snippet}</p>
-                </li>
+                  <p className="text-sm text-gray-500 truncate">From: {email.from}</p>
+                  <p className="text-gray-600 mt-2 truncate">{email.snippet}</p>
+
+                  {/* Display the priority icon */}
+                  {email.priority && (
+                    <FaExclamationCircle
+                      className={`absolute top-2 right-2 ${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'}`}
+                      size={20}
+                    />
+                  )}
+                </div>
               ))}
-            </ul>
+            </div>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
+              onClick={() => {
+                if (user?.email) {
+                  fetchEmails(getGmailLabel(slug), user.email, nextPageToken);
+                }
+              }}
+            >
+              Load More
+            </button>
           </>
         )}
       </div>
 
-      {/* Compose Message Modal */}
-      <Compose
-        isOpen={isComposeOpen}
-        onClose={closeComposeModal}
-        userEmail={user?.email}
-      />
+      <Compose isOpen={isComposeOpen} onClose={closeComposeModal} userEmail={user?.email} />
     </div>
   );
 };
