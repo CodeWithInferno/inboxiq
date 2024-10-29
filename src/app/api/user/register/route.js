@@ -1,3 +1,4 @@
+// src/app/api/users/register.js
 import { getSession } from '@auth0/nextjs-auth0';
 import { addUserToDatabase } from '../../../../lib/user';
 import { NextResponse } from 'next/server';
@@ -8,18 +9,14 @@ export async function GET(req) {
     const session = await getSession(req);
     const user = session?.user;
 
-    console.log('User data from session:', user);
-
     if (user) {
-      // Add user to MongoDB
+      // Add user to MongoDB with default features
       await addUserToDatabase(user);
-      console.log('User added to MongoDB successfully');
 
-      // Use an absolute URL for redirection
+      // Redirect to the dashboard after adding the user
       const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000';
       return NextResponse.redirect(`${baseUrl}/dashboard`);
     } else {
-      console.log('User object is undefined');
       return NextResponse.json(
         { message: 'User object is undefined' },
         { status: 400 }

@@ -1,3 +1,4 @@
+// src/app/api/users/getUserData.js
 import { getSession } from '@auth0/nextjs-auth0';
 import clientPromise from '@/lib/mongodb';
 

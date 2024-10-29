@@ -15,7 +15,7 @@ export async function POST(req) {
 
     // Request a summary from OpenAI
     const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-3.5-turbo',
       messages: [
         { role: 'system', content: 'You are an assistant that summarizes emails.' },
         { role: 'user', content: `Please summarize this email: ${emailBody}` },

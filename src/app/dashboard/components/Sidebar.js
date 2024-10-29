@@ -113,23 +113,24 @@ const Sidebar = () => {
               )}
             </div>
 
-            {/* Dropdown Menu */}
-            {isDropdownOpen && (
-              <div className="absolute left-0 w-full mt-2 bg-white text-gray-700 shadow-lg rounded-lg">
-                <Link
-                  href="/settings"
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-200"
-                >
-                  Settings
-                </Link>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-200"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </div>
-            )}
+{/* Dropdown Menu */}
+{isDropdownOpen && (
+  <div className="absolute bottom-full mb-2 w-full bg-white text-gray-700 shadow-lg rounded-lg">
+    <Link
+      href="/settings"
+      className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+    >
+      Settings
+    </Link>
+    <button
+      className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+      onClick={handleLogout}
+    >
+      Logout
+    </button>
+  </div>
+)}
+
           </div>
         )}
       </div>
