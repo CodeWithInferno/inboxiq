@@ -16,7 +16,7 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.1.5",
     "@sanity/image-url": "^1.0.2",
-    "@sanity/vision": "^3.61.0",
+    "@sanity/vision": "^3.62.3",
     "axios": "^1.7.7",
     "cookies-next": "^4.3.0",
     "dompurify": "^3.1.7",
