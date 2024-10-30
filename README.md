@@ -8,7 +8,7 @@
 [![Stars](https://img.shields.io/github/stars/CodeWithInferno/inboxiq.svg)](https://github.com/CodeWithInferno/inboxiq/stargazers)
 
 
-![InboxIQ Logo](/inboxiq/public/Logo.webp) 
+![InboxIQ Logo](public/Logo.webp) 
 
 # InboxIQ
 
