@@ -1,0 +1,16 @@
+# .github/dependabot.yml
+version: 2
+updates:
+  # This will check for updates to npm dependencies.
+  - package-ecosystem: "npm"
+    # Directory where `package.json` is located
+    directory: "/"
+    # Frequency of update checks: daily, weekly, or monthly
+    schedule:
+      interval: "weekly"
+    # Reviewer(s) for the PRs created by Dependabot
+    reviewers:
+      - "CodeWithInferno"  # Replace with GitHub username(s) of reviewers
+    # Auto-merge minor and patch updates
+    commit-message:
+      prefix: "chore"
