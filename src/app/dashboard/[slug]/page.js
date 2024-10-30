@@ -218,7 +218,7 @@
 
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { useUser } from '@auth0/nextjs-auth0/client';
 import Sidebar from '../components/Sidebar';
@@ -227,6 +227,7 @@ import Compose from '../components/Compose';
 import { FaExclamationCircle } from 'react-icons/fa';  // Importing icons for the priority indicator
 
 const DashboardPage = () => {
+  const router = useRouter(); // Initialize useRouter for redirection
   const { slug } = useParams();
   const { user, isLoading } = useUser();
   const [emails, setEmails] = useState([]);
@@ -241,7 +242,13 @@ const DashboardPage = () => {
 
   const loaderRef = useRef(null);  // For observing when to load more emails
 
-  // Helper to get Gmail label
+  useEffect(() => {
+    // Redirect to 'inbox' if slug is undefined (user is on /dashboard)
+    if (!slug) {
+      router.replace('/dashboard/inbox');
+    }
+  }, [slug, router]);
+
   const getGmailLabel = (slug) => {
     switch (slug) {
       case 'inbox': return 'INBOX';
@@ -256,14 +263,10 @@ const DashboardPage = () => {
     }
   };
 
-  // Fetch emails from Gmail API and classify importance
-  // Fetch emails from Gmail API and classify importance
   const fetchEmails = async (label, email, pageToken = null, query = '') => {
     setLoading(true);
     try {
-      // Build URL with query only if it is not empty
       const url = `/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(email)}${pageToken ? `&pageToken=${pageToken}` : ''}${query ? `&query=${encodeURIComponent(query)}` : ''}`;
-
       const response = await fetch(url);
       if (!response.ok) {
         const errorData = await response.json();
@@ -271,12 +274,9 @@ const DashboardPage = () => {
       }
 
       const data = await response.json();
-
-      // After fetching emails, classify them for importance
       const classifiedEmails = await classifyEmails(data.messages);
       setEmails((prevEmails) => [...prevEmails, ...classifiedEmails]);
-      setNextPageToken(data.nextPageToken || null);  // Store the next page token
-
+      setNextPageToken(data.nextPageToken || null);
       setLabelCounts(data.labelCounts || {});
     } catch (error) {
       console.error('Error fetching emails:', error.message);
@@ -284,8 +284,6 @@ const DashboardPage = () => {
     setLoading(false);
   };
 
-
-  // Call the API to classify emails for importance
   const classifyEmails = async (emails) => {
     return await Promise.all(
       emails.map(async (email) => {
@@ -297,10 +295,10 @@ const DashboardPage = () => {
             body: JSON.stringify({ email: emailContent }),
           });
           const { priority } = await response.json();
-          return { ...email, priority };  // Attach priority to the email
+          return { ...email, priority };
         } catch (error) {
           console.error('Error classifying email:', error.message);
-          return { ...email, priority: 'Low Priority' }; // Default to low priority if classification fails
+          return { ...email, priority: 'Low Priority' };
         }
       })
     );
@@ -335,14 +333,13 @@ const DashboardPage = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setEmails([]); // Clear the current emails when starting a new search
+    setEmails([]);
     setSearchMode(true);
     const label = getGmailLabel(slug);
     if (user?.email) {
-      fetchEmails(label, user.email, null, searchQuery);  // Pass search query here
+      fetchEmails(label, user.email, null, searchQuery);
     }
   };
-
 
   const handleBackToInbox = () => {
     setSearchMode(false);
@@ -398,7 +395,6 @@ const DashboardPage = () => {
               </button>
             </form>
 
-
             {searchMode && (
               <button className="text-blue-500 hover:text-blue-700 mb-4" onClick={handleBackToInbox}>
                 &larr; Back to Inbox
@@ -421,7 +417,7 @@ const DashboardPage = () => {
             selectedMessage={selectedMessage}
             threadMessages={threadMessages}
             handleCloseMessage={handleCloseMessage}
-            onDeleteMessage={() => setEmails(emails.filter(e => e.id !== selectedMessage.id))} // Remove email from UI after deletion
+            onDeleteMessage={() => setEmails(emails.filter(e => e.id !== selectedMessage.id))}
           />
         ) : emails.length === 0 ? (
           <div className="flex items-center justify-center h-full">
@@ -440,7 +436,6 @@ const DashboardPage = () => {
                   <p className="text-sm text-gray-500 truncate">From: {email.from}</p>
                   <p className="text-gray-600 mt-2 truncate">{email.snippet}</p>
 
-                  {/* Display the priority icon */}
                   {email.priority && (
                     <FaExclamationCircle
                       className={`absolute top-2 right-2 ${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'}`}
