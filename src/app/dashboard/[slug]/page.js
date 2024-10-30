@@ -227,14 +227,14 @@ import Compose from '../components/Compose';
 import { FaExclamationCircle } from 'react-icons/fa';  // Importing icons for the priority indicator
 
 const DashboardPage = () => {
-  const { slug } = useParams(); 
-  const { user, isLoading } = useUser(); 
+  const { slug } = useParams();
+  const { user, isLoading } = useUser();
   const [emails, setEmails] = useState([]);
   const [labelCounts, setLabelCounts] = useState({});
   const [nextPageToken, setNextPageToken] = useState(null);  // Pagination token
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [threadMessages, setThreadMessages] = useState([]); 
+  const [threadMessages, setThreadMessages] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState(false);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
@@ -257,10 +257,14 @@ const DashboardPage = () => {
   };
 
   // Fetch emails from Gmail API and classify importance
+  // Fetch emails from Gmail API and classify importance
   const fetchEmails = async (label, email, pageToken = null, query = '') => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(email)}${pageToken ? `&pageToken=${pageToken}` : ''}&query=${query}`);
+      // Build URL with query only if it is not empty
+      const url = `/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(email)}${pageToken ? `&pageToken=${pageToken}` : ''}${query ? `&query=${encodeURIComponent(query)}` : ''}`;
+
+      const response = await fetch(url);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Unknown error occurred while fetching emails');
@@ -272,13 +276,14 @@ const DashboardPage = () => {
       const classifiedEmails = await classifyEmails(data.messages);
       setEmails((prevEmails) => [...prevEmails, ...classifiedEmails]);
       setNextPageToken(data.nextPageToken || null);  // Store the next page token
-  
+
       setLabelCounts(data.labelCounts || {});
     } catch (error) {
       console.error('Error fetching emails:', error.message);
     }
     setLoading(false);
   };
+
 
   // Call the API to classify emails for importance
   const classifyEmails = async (emails) => {
@@ -304,7 +309,7 @@ const DashboardPage = () => {
   const handleOpenMessage = (message) => {
     if (message && message.threadId) {
       setSelectedMessage(message);
-      fetchThread(message.threadId); 
+      fetchThread(message.threadId);
     } else {
       console.error('No threadId found for this message.');
     }
@@ -325,26 +330,27 @@ const DashboardPage = () => {
 
   const handleCloseMessage = () => {
     setSelectedMessage(null);
-    setThreadMessages([]); 
+    setThreadMessages([]);
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setEmails([]); 
-    setSearchMode(true); 
+    setEmails([]); // Clear the current emails when starting a new search
+    setSearchMode(true);
     const label = getGmailLabel(slug);
     if (user?.email) {
-      fetchEmails(label, user.email, null, searchQuery);  
+      fetchEmails(label, user.email, null, searchQuery);  // Pass search query here
     }
   };
 
+
   const handleBackToInbox = () => {
-    setSearchMode(false);  
-    setSearchQuery('');    
-    setEmails([]);         
-    const label = getGmailLabel('inbox');  
+    setSearchMode(false);
+    setSearchQuery('');
+    setEmails([]);
+    const label = getGmailLabel('inbox');
     if (user?.email) {
-      fetchEmails(label, user.email);        
+      fetchEmails(label, user.email);
     }
   };
 
@@ -358,7 +364,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     if (user && slug && !searchMode) {
-      const label = getGmailLabel(slug); 
+      const label = getGmailLabel(slug);
       fetchEmails(label, user.email);
     }
   }, [slug, user, searchMode]);
@@ -379,7 +385,7 @@ const DashboardPage = () => {
 
         {!selectedMessage && (
           <>
-            <form className="mb-4">
+            <form className="mb-4" onSubmit={handleSearch}>
               <input
                 type="text"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
@@ -387,7 +393,11 @@ const DashboardPage = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              <button type="submit" className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg">
+                Search
+              </button>
             </form>
+
 
             {searchMode && (
               <button className="text-blue-500 hover:text-blue-700 mb-4" onClick={handleBackToInbox}>

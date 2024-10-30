@@ -1,42 +1,57 @@
-// /src/app/api/messages/summarize/route.js
-import { OpenAI } from 'openai';
+import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
+import { getSession } from '@auth0/nextjs-auth0';
+import { getUserFeatureState } from '@/lib/getUserFeatureState';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // Ensure your OpenAI API Key is in the environment variables
-});
+function getOpenAIClient(isFeatureEnabled) {
+  const apiKey = isFeatureEnabled ? process.env.OPENAI_API_KEY : process.env.DISABLED_API;
+  return new OpenAI({ apiKey });
+}
 
 export async function POST(req) {
   try {
-    const { emailBody } = await req.json();
+    const body = await req.json();
+    console.log("Request body received:", body);
 
-    if (!emailBody) {
-      return new Response(JSON.stringify({ message: 'Email body is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    let { emailBody, userId } = body;
+
+    // Retrieve userId from session if missing in the request
+    if (!userId) {
+      const session = await getSession(req);
+      userId = session?.user?.sub; // Adjust 'sub' if using a different field for user ID
+      console.log("Retrieved userId from session:", userId);
     }
 
-    // Use OpenAI's GPT to summarize the email
+    if (!emailBody || !userId) {
+      console.error('Email body or user ID is missing');
+      return NextResponse.json({ message: 'Email body or user ID is missing' }, { status: 400 });
+    }
+
+    // Debugging log in getUserFeatureState
+    const isFeatureEnabled = await getUserFeatureState(userId, 'summarizeEmail');
+    console.log("Summarize Email feature status for user:", isFeatureEnabled ? "enabled" : "disabled", " | User ID:", userId);
+
+    const openai = getOpenAIClient(isFeatureEnabled);
+
+    if (!isFeatureEnabled) {
+      return NextResponse.json({ message: 'Summarize email feature is disabled for this user' }, { status: 403 });
+    }
+
+    // Request a summary from OpenAI
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are an email summarizer.' },
-        { role: 'user', content: `Summarize this email: ${emailBody}` },
+        { role: 'system', content: 'You are an assistant that summarizes emails.' },
+        { role: 'user', content: `Please summarize this email: ${emailBody}` },
       ],
-      max_tokens: 150,  // Adjust based on how concise the summary needs to be
     });
 
     const summary = response.choices[0].message.content.trim();
+    console.log("Summary generated:", summary);
 
-    return new Response(JSON.stringify({ summary }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return NextResponse.json({ summary }, { status: 200 });
   } catch (error) {
     console.error('Error summarizing email:', error);
-    return new Response(
-      JSON.stringify({ message: 'Internal server error', details: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({ message: 'Internal Server Error', error: error.message }, { status: 500 });
   }
 }
