@@ -1,3 +1,5 @@
+"use server";
+
 import { connectToDatabase } from '@/lib/mongodb';
 import { getSession } from '@auth0/nextjs-auth0';
 
