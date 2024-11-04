@@ -1,221 +1,3 @@
-// 'use client';
-
-// import { useParams } from 'next/navigation';
-// import { useEffect, useState, useRef } from 'react';
-// import { useUser } from '@auth0/nextjs-auth0/client';
-// import Sidebar from '../components/Sidebar';
-// import MessageDetails from '../components/MessageDetails';
-// import Compose from '../components/Compose';
-
-// const DashboardPage = () => {
-//   const { slug } = useParams(); 
-//   const { user, isLoading } = useUser(); 
-//   const [emails, setEmails] = useState([]);
-//   const [labelCounts, setLabelCounts] = useState({});
-//   const [nextPageToken, setNextPageToken] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [selectedMessage, setSelectedMessage] = useState(null);
-//   const [threadMessages, setThreadMessages] = useState([]); 
-//   const [searchQuery, setSearchQuery] = useState('');
-//   const [searchMode, setSearchMode] = useState(false);
-//   const [isComposeOpen, setIsComposeOpen] = useState(false);
-
-//   const loaderRef = useRef(null);
-
-//   const getGmailLabel = (slug) => {
-//     switch (slug) {
-//       case 'inbox':
-//         return 'INBOX';
-//       case 'promotions':
-//         return 'CATEGORY_PROMOTIONS';
-//       case 'social':
-//         return 'CATEGORY_SOCIAL';
-//       case 'spam':
-//         return 'SPAM';
-//       case 'trash':
-//         return 'TRASH';
-//       case 'sent':
-//         return 'SENT';
-//       case 'drafts':
-//         return 'DRAFT';
-//       case 'starred':
-//         return 'STARRED';
-//       default:
-//         return 'INBOX';
-//     }
-//   };
-
-//   const fetchEmails = async (label, email, pageToken = null, query = '') => {
-//     setLoading(true);
-//     try {
-//       const response = await fetch(`/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(email)}${pageToken ? `&pageToken=${pageToken}` : ''}&query=${query}`);
-//       if (!response.ok) {
-//         const errorData = await response.json();
-//         throw new Error(errorData.error || 'Unknown error occurred while fetching emails');
-//       }
-
-//       const data = await response.json();
-//       if (Array.isArray(data.messages)) {
-//         setEmails((prevEmails) => [...prevEmails, ...data.messages]);
-//       } else {
-//         setEmails([]);
-//       }
-
-//       setLabelCounts(data.labelCounts || {});
-//       setNextPageToken(data.nextPageToken || null);
-//     } catch (error) {
-//       console.error('Error fetching emails:', error.message);
-//     }
-//     setLoading(false);
-//   };
-
-//   const fetchThread = async (threadId) => {
-//     try {
-//       const response = await fetch(`/api/auth/google/fetchThreads?email=${encodeURIComponent(user.email)}&threadId=${threadId}`);
-//       if (!response.ok) {
-//         throw new Error('Failed to fetch thread');
-//       }
-//       const data = await response.json();
-//       setThreadMessages(data.messages || []);
-//     } catch (error) {
-//       console.error('Error fetching thread:', error.message);
-//     }
-//   };
-
-//   const handleOpenMessage = (message) => {
-//     if (message && message.threadId) {
-//       setSelectedMessage(message);
-//       fetchThread(message.threadId); 
-//     } else {
-//       console.error('No threadId found for this message.');
-//     }
-//   };
-
-//   const handleCloseMessage = () => {
-//     setSelectedMessage(null);
-//     setThreadMessages([]); 
-//   };
-
-//   const handleSearch = (e) => {
-//     e.preventDefault();
-//     setEmails([]); 
-//     setSearchMode(true); 
-//     const label = getGmailLabel(slug);
-//     fetchEmails(label, user.email, null, searchQuery);  
-//   };
-
-//   const handleBackToInbox = () => {
-//     setSearchMode(false);  
-//     setSearchQuery('');    
-//     setEmails([]);         
-//     const label = getGmailLabel('inbox');  
-//     fetchEmails(label, user.email);        
-//   };
-
-//   const openComposeModal = () => {
-//     setIsComposeOpen(true);
-//   };
-
-//   const closeComposeModal = () => {
-//     setIsComposeOpen(false);
-//   };
-
-//   useEffect(() => {
-//     if (user && slug && !searchMode) {
-//       const label = getGmailLabel(slug); 
-//       fetchEmails(label, user.email);
-//     }
-//   }, [slug, user, searchMode]);
-
-//   if (isLoading) {
-//     return (
-//       <div className="flex items-center justify-center h-screen">
-//         <p>Loading user info...</p>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="flex h-screen bg-gray-50">
-//       <Sidebar labelCounts={labelCounts} />
-//       <div className="flex-grow p-6 overflow-y-auto">
-//         <h1 className="text-4xl font-semibold capitalize mb-6 text-gray-800">{slug}</h1>
-
-//         {!selectedMessage && (
-//           <>
-//             <form className="mb-4">
-//               <input
-//                 type="text"
-//                 className="w-full p-2 border rounded-lg focus:outline-none"
-//                 placeholder="Search emails..."
-//                 value={searchQuery}
-//                 onChange={(e) => setSearchQuery(e.target.value)}
-//               />
-//             </form>
-
-//             {searchMode && (
-//               <button className="text-blue-500 hover:text-blue-700 mb-4" onClick={handleBackToInbox}>
-//                 &larr; Back to Inbox
-//               </button>
-//             )}
-
-//             <button
-//               className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 mb-4"
-//               onClick={openComposeModal}
-//             >
-//               Compose
-//             </button>
-//           </>
-//         )}
-
-//         {loading && emails.length === 0 ? (
-//           <p className="text-gray-600">Loading emails...</p>
-//         ) : selectedMessage ? (
-//           <MessageDetails
-//             selectedMessage={selectedMessage}
-//             threadMessages={threadMessages}
-//             handleCloseMessage={handleCloseMessage}
-//           />
-//         ) : emails.length === 0 ? (
-//           <div className="flex items-center justify-center h-full">
-//             <p className="text-lg text-gray-500">No emails found for {slug}</p>
-//           </div>
-//         ) : (
-//           <div className="grid grid-cols-1 gap-4">
-//             {emails.map((email) => (
-//               <div
-//                 key={email.id}
-//                 className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-//                 onClick={() => handleOpenMessage(email)}
-//               >
-//                 <h2 className="font-bold text-lg mb-1">{email.subject || '(No Subject)'}</h2>
-//                 <p className="text-sm text-gray-500 truncate">From: {email.from}</p>
-//                 <p className="text-gray-600 mt-2 truncate">{email.snippet}</p>
-//               </div>
-//             ))}
-//           </div>
-//         )}
-//       </div>
-
-//       <Compose isOpen={isComposeOpen} onClose={closeComposeModal} userEmail={user?.email} />
-//     </div>
-//   );
-// };
-
-// export default DashboardPage;
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
@@ -225,25 +7,26 @@ import Sidebar from '../components/Sidebar';
 import MessageDetails from '../components/MessageDetails';
 import Compose from '../components/Compose';
 import { FaExclamationCircle } from 'react-icons/fa';  // Importing icons for the priority indicator
+import { debounce } from 'lodash';
 
 const DashboardPage = () => {
-  const router = useRouter(); // Initialize useRouter for redirection
+  const router = useRouter();
   const { slug } = useParams();
   const { user, isLoading } = useUser();
   const [emails, setEmails] = useState([]);
   const [labelCounts, setLabelCounts] = useState({});
-  const [nextPageToken, setNextPageToken] = useState(null);  // Pagination token
+  const [nextPageToken, setNextPageToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [threadMessages, setThreadMessages] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
   const [searchMode, setSearchMode] = useState(false);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
 
-  const loaderRef = useRef(null);  // For observing when to load more emails
+  const loaderRef = useRef(null);
 
   useEffect(() => {
-    // Redirect to 'inbox' if slug is undefined (user is on /dashboard)
     if (!slug) {
       router.replace('/dashboard/inbox');
     }
@@ -331,7 +114,31 @@ const DashboardPage = () => {
     setThreadMessages([]);
   };
 
-  const handleSearch = (e) => {
+  const fetchSuggestions = debounce(async (query) => {
+    if (query.trim() === '') {
+      setSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/auth/google/searchSuggestions?query=${encodeURIComponent(query)}&email=${encodeURIComponent(user.email)}`);
+      if (!response.ok) {
+        throw new Error('Error fetching search suggestions');
+      }
+      const data = await response.json();
+      setSuggestions(data.suggestions || []);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error.message);
+    }
+  }, 300); // Debounce of 300 ms
+
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    fetchSuggestions(query);
+  };
+
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
     setEmails([]);
     setSearchMode(true);
@@ -339,6 +146,12 @@ const DashboardPage = () => {
     if (user?.email) {
       fetchEmails(label, user.email, null, searchQuery);
     }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setSearchQuery(suggestion);
+    setSuggestions([]);
+    handleSearchSubmit(new Event('submit'));
   };
 
   const handleBackToInbox = () => {
@@ -382,17 +195,30 @@ const DashboardPage = () => {
 
         {!selectedMessage && (
           <>
-            <form className="mb-4" onSubmit={handleSearch}>
+            <form className="mb-4" onSubmit={handleSearchSubmit}>
               <input
                 type="text"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
+                className="w-full p-3 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:border-blue-500 transition"
                 placeholder="Search emails..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
               />
               <button type="submit" className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg">
                 Search
               </button>
+              {suggestions.length > 0 && (
+                <ul className="border border-gray-300 rounded-lg bg-white mt-2 max-h-40 overflow-y-auto">
+                  {suggestions.map((suggestion, index) => (
+                    <li
+                      key={index}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                    >
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </form>
 
             {searchMode && (
