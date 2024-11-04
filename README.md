@@ -30,7 +30,8 @@ Try InboxIQ live on our [Demo Link](https://inboxiq.demo.link).
 ## 📸 Screenshots
 
 <!-- Add screenshots of your application here -->
-![InboxIQ Interface](https://yourscreenshot.link/demo.png)
+![InboxIQ Interface](public/screenshot.jpeg)
+
 
 ## 📚 Table of Contents
 
