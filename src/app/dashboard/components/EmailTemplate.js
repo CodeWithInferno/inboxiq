@@ -20,7 +20,7 @@ const EmailTemplate = ({ userEmail }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/ai/emailTemplates', {
+      const response = await fetch('/api/ai/compose/emailTemplates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

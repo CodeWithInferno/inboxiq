@@ -72,7 +72,7 @@ const DashboardPage = () => {
       emails.map(async (email) => {
         try {
           const emailContent = { subject: email.subject, body: email.snippet };
-          const response = await fetch('/api/ai/classifyEmail', {
+          const response = await fetch('/api/ai/email/classifyEmail', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: emailContent }),
