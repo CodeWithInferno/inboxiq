@@ -303,7 +303,7 @@ import getUserTokens from '@/lib/getUserTokens';
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get('email');
-  const label = searchParams.get('label') || 'INBOX';  // Fetch emails from a specific label (default to INBOX)
+  const label = searchParams.get('label') || 'INBOX';  // Default label to INBOX if none is provided
   const query = searchParams.get('query') || '';  // Handle search queries if provided
 
   if (!email) {
@@ -334,7 +334,9 @@ export async function GET(req) {
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // Fetch emails
+    // Add a delay to allow Gmail servers to apply label updates
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     const response = await gmail.users.messages.list({
       userId: 'me',
       labelIds: [label],
@@ -353,7 +355,11 @@ export async function GET(req) {
     const messagePromises = response.data.messages.map(async (message) => {
       const msg = await gmail.users.messages.get({ userId: 'me', id: message.id });
 
-      // Helper function to decode Base64 email content safely
+      // Check that the message has the correct label to avoid cached issues
+      if (!msg.data.labelIds.includes(label)) {
+        return null;
+      }
+
       const decodeBase64 = (data) => {
         if (!data) return '';  // Handle missing data
         return Buffer.from(data, 'base64').toString('utf-8');
@@ -388,7 +394,7 @@ export async function GET(req) {
       };
     });
 
-    const messages = await Promise.all(messagePromises);
+    const messages = (await Promise.all(messagePromises)).filter(Boolean);
     return new Response(JSON.stringify({ messages }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

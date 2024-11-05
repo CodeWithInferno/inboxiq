@@ -62,7 +62,7 @@ const handleSubmit = async (e) => {
     setIsLoadingReply(true);
 
     try {
-      const response = await fetch('/api/ai/smartReply', {
+      const response = await fetch('/api/ai/compose/smartReply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

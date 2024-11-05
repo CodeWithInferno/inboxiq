@@ -65,7 +65,7 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
   const handleSummarizeEmail = async () => {
     setIsLoadingSummary(true);
     try {
-      const response = await fetch('/api/ai/summarizeEmail', {
+      const response = await fetch('/api/ai/email/summarizeEmail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -113,7 +113,7 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
   const handleSentimentAnalysis = async () => {
     setIsLoadingSentiment(true);
     try {
-      const response = await fetch('/api/ai/sentimentAnalysis', {
+      const response = await fetch('/api/ai/email/sentimentAnalysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -137,7 +137,7 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
   const handleGenerateSmartReply = async () => {
     setIsGeneratingReply(true);
     try {
-      const response = await fetch('/api/ai/smartReply', {
+      const response = await fetch('/api/ai/compose/smartReply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
