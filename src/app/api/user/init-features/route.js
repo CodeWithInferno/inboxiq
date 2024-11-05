@@ -23,6 +23,7 @@ export async function GET(req) {
       sentimentAnalysis: true,
       smartReply: true,
       emailSummary: true,
+      classify: true,
     };
 
     const result = await db.collection('features').updateOne(
