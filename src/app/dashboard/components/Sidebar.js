@@ -86,6 +86,12 @@ const Sidebar = () => {
                   {!isCollapsed && <span className="text-lg">Spam</span>}
                 </Link>
               </li>
+              <li className="flex items-center">
+                <Link href="/dashboard/calendar" className="flex items-center space-x-4">
+                  <MdWarning size={24} />
+                  {!isCollapsed && <span className="text-lg">Calendar</span>}
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>
