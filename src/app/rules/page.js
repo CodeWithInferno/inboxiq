@@ -63,8 +63,9 @@ import Sidebar from './components/sidebar';
 import TopNavigationTabs from './components/TopNavigationTabs';
 import PromptSection from './components/PromptSection';
 import ExamplesPanel from './components/ExamplesPanel';
+import UserProfileSection from './components/UserProfileSection';
 import RulesTable from './components/RulesTable';
-import Labeling from './components/labeling'; // Import the Labeling component
+import Labeling from './components/Labeling'; // Import the Labeling component
 
 const MainPage = () => {
   const [selectedTab, setSelectedTab] = useState('Prompt');
