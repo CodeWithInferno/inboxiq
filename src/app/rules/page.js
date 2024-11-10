@@ -63,8 +63,8 @@ import Sidebar from './components/sidebar';
 import TopNavigationTabs from './components/TopNavigationTabs';
 import PromptSection from './components/PromptSection';
 import ExamplesPanel from './components/ExamplesPanel';
-import UserProfileSection from './components/UserProfileSection';
-import RulesTable from './components/RulesTable'; // Import the RulesTable component
+import RulesTable from './components/RulesTable';
+import Labeling from './components/labeling'; // Import the Labeling component
 
 const MainPage = () => {
   const [selectedTab, setSelectedTab] = useState('Prompt');
@@ -86,7 +86,6 @@ const MainPage = () => {
         {/* Top Section */}
         <div className="p-6 flex justify-between items-center border-b border-gray-200 bg-white">
           <TopNavigationTabs selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-
         </div>
 
         {/* Scrollable Content */}
@@ -101,6 +100,11 @@ const MainPage = () => {
             {selectedTab === 'Rules' && (
               <div className="w-full">
                 <RulesTable />
+              </div>
+            )}
+            {selectedTab === 'Labels' && (
+              <div className="w-full">
+                <Labeling />
               </div>
             )}
           </div>

@@ -1,3 +1,4 @@
+
 // 'use client';
 // import React, { useState, useEffect } from 'react';
 // import { Switch } from '@headlessui/react';
@@ -144,10 +145,12 @@
 //                   ) : (
 //                     <>
 //                       {rule.name}
-//                       <AiOutlineEdit
-//                         className="ml-2 cursor-pointer text-gray-500"
-//                         onClick={() => handleEdit(index, 'name')}
-//                       />
+//                       {!rule.name && (
+//                         <AiOutlineEdit
+//                           className="ml-2 cursor-pointer text-gray-500"
+//                           onClick={() => handleEdit(index, 'name')}
+//                         />
+//                       )}
 //                     </>
 //                   )}
 //                 </td>
@@ -171,10 +174,12 @@
 //                   ) : (
 //                     <>
 //                       {rule.group}
-//                       <AiOutlinePlus
-//                         className="ml-2 cursor-pointer text-gray-500"
-//                         onClick={() => handleEdit(index, 'group')}
-//                       />
+//                       {!rule.group && (
+//                         <AiOutlinePlus
+//                           className="ml-2 cursor-pointer text-gray-500"
+//                           onClick={() => handleEdit(index, 'group')}
+//                         />
+//                       )}
 //                     </>
 //                   )}
 //                 </td>
@@ -197,10 +202,12 @@
 //                   ) : (
 //                     <>
 //                       {rule.action}
-//                       <AiOutlinePlus
-//                         className="ml-2 cursor-pointer text-gray-500"
-//                         onClick={() => handleEdit(index, 'action')}
-//                       />
+//                       {!rule.action && (
+//                         <AiOutlinePlus
+//                           className="ml-2 cursor-pointer text-gray-500"
+//                           onClick={() => handleEdit(index, 'action')}
+//                         />
+//                       )}
 //                     </>
 //                   )}
 //                 </td>
@@ -260,11 +267,7 @@
 
 
 
-
-
-
-
-
+// src/components/RulesTable.js
 
 'use client';
 import React, { useState, useEffect } from 'react';
@@ -278,26 +281,38 @@ const RulesTable = () => {
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('');
   const [newAction, setNewAction] = useState('');
+  const [labels, setLabels] = useState([]);
+  const [labelEditIndex, setLabelEditIndex] = useState(null);
 
   useEffect(() => {
-    const fetchRules = async () => {
-      try {
-        const response = await fetch('/api/Rules/get-rules');
-        const data = await response.json();
-
-        const transformedRules = data.rules.map((rule) => ({
-          ...rule,
-          automated: rule.status || false,
-        }));
-
-        setRules(transformedRules);
-      } catch (error) {
-        console.error('Error fetching rules:', error);
-      }
-    };
-
     fetchRules();
+    fetchLabels();
   }, []);
+
+  const fetchRules = async () => {
+    try {
+      const response = await fetch('/api/Rules/get-rules');
+      const data = await response.json();
+      const transformedRules = data.rules.map((rule) => ({
+        ...rule,
+        automated: rule.status || false,
+        tags: rule.tags || [], // Ensure tags are included
+      }));
+      setRules(transformedRules);
+    } catch (error) {
+      console.error('Error fetching rules:', error);
+    }
+  };
+
+  const fetchLabels = async () => {
+    try {
+      const response = await fetch('/api/Rules/labels/get-labels');
+      const data = await response.json();
+      setLabels(data.labels);
+    } catch (error) {
+      console.error('Error fetching labels:', error);
+    }
+  };
 
   const handleToggle = (index) => {
     setRules((prevRules) =>
@@ -376,6 +391,30 @@ const RulesTable = () => {
     }
   };
 
+  const handleLabelSelect = (ruleIndex, label) => {
+    const updatedRules = [...rules];
+    const selectedRule = updatedRules[ruleIndex];
+
+    if (!selectedRule.tags.find((tag) => tag._id === label._id)) {
+      selectedRule.tags = [...(selectedRule.tags || []), label];
+      setRules(updatedRules);
+
+      saveLabelsForRule(selectedRule._id, selectedRule.tags);
+    }
+  };
+
+  const saveLabelsForRule = async (ruleId, tags) => {
+    try {
+      await fetch('/api/Rules/update-tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruleId, tags }),
+      });
+    } catch (error) {
+      console.error('Error updating tags:', error);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4 w-full">
       <h2 className="text-lg font-semibold mb-4">Rules</h2>
@@ -393,89 +432,38 @@ const RulesTable = () => {
           {rules.length > 0 ? (
             rules.map((rule, index) => (
               <tr key={rule._id}>
-                <td className="py-2 px-4 border-b">
-                  {editingIndex === index && editingField === 'name' ? (
-                    <div className="flex items-center">
-                      <input
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        className="border rounded px-2 py-1"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleSaveField(index, 'name')}
-                        className="ml-2 text-blue-500"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      {rule.name}
-                      {!rule.name && (
-                        <AiOutlineEdit
-                          className="ml-2 cursor-pointer text-gray-500"
-                          onClick={() => handleEdit(index, 'name')}
-                        />
-                      )}
-                    </>
-                  )}
-                </td>
+                <td className="py-2 px-4 border-b">{rule.name}</td>
                 <td className="py-2 px-4 border-b">{rule.description}</td>
+                <td className="py-2 px-4 border-b">{rule.group}</td>
                 <td className="py-2 px-4 border-b">
-                  {editingIndex === index && editingField === 'group' ? (
-                    <div className="flex items-center">
-                      <input
-                        value={newGroup}
-                        onChange={(e) => setNewGroup(e.target.value)}
-                        className="border rounded px-2 py-1"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleSaveField(index, 'group')}
-                        className="ml-2 text-blue-500"
+                  <div className="flex items-center space-x-2">
+                    {rule.tags?.map((tag) => (
+                      <span
+                        key={tag._id}
+                        style={{ color: tag.color, borderColor: tag.color }}
+                        className="text-xs font-semibold border rounded-full px-2 py-1"
                       >
-                        Save
-                      </button>
+                        {tag.label}
+                      </span>
+                    ))}
+                    <AiOutlinePlus
+                      className="cursor-pointer text-gray-500"
+                      onClick={() => setLabelEditIndex(index)}
+                    />
+                  </div>
+                  {labelEditIndex === index && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {labels.map((label) => (
+                        <button
+                          key={label._id}
+                          onClick={() => handleLabelSelect(index, label)}
+                          className="text-xs font-semibold px-2 py-1 rounded-full border"
+                          style={{ color: label.color, borderColor: label.color }}
+                        >
+                          {label.label}
+                        </button>
+                      ))}
                     </div>
-                  ) : (
-                    <>
-                      {rule.group}
-                      {!rule.group && (
-                        <AiOutlinePlus
-                          className="ml-2 cursor-pointer text-gray-500"
-                          onClick={() => handleEdit(index, 'group')}
-                        />
-                      )}
-                    </>
-                  )}
-                </td>
-                <td className="py-2 px-4 border-b">
-                  {editingIndex === index && editingField === 'action' ? (
-                    <div className="flex items-center">
-                      <input
-                        value={newAction}
-                        onChange={(e) => setNewAction(e.target.value)}
-                        className="border rounded px-2 py-1"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleSaveField(index, 'action')}
-                        className="ml-2 text-blue-500"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      {rule.action}
-                      {!rule.action && (
-                        <AiOutlinePlus
-                          className="ml-2 cursor-pointer text-gray-500"
-                          onClick={() => handleEdit(index, 'action')}
-                        />
-                      )}
-                    </>
                   )}
                 </td>
                 <td className="py-2 px-4 border-b text-center">
