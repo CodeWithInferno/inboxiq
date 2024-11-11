@@ -1,7 +1,9 @@
 import React from 'react';
 
 const TopNavigationTabs = ({ selectedTab, setSelectedTab }) => {
-  const tabs = ['Prompt', 'Rules', 'Pending', 'History', 'Test', 'Groups'];
+
+  const tabs = ['Prompt', 'Rules', 'Pending', 'History', 'Test', 'Labels'];
+
 
   return (
     <div className="flex space-x-4 border-b border-gray-200 p-4">
