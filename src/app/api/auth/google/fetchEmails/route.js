@@ -1,144 +1,755 @@
-
 // import { google } from 'googleapis';
-// import { connectToDatabase } from '@/lib/database';
+// import getUserTokens from '@/lib/getUserTokens';
 
 // export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const email = searchParams.get('email');
+//   const label = searchParams.get('label') || 'INBOX';  // Default label to INBOX if none is provided
+//   const query = searchParams.get('query') || '';  // Handle search queries if provided
+
+//   if (!email) {
+//     return new Response(JSON.stringify({ message: 'Email is required' }), {
+//       status: 400,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   }
+
 //   try {
-//     const { searchParams } = new URL(req.url);
-//     const email = searchParams.get('email');
-//     const query = searchParams.get('query');  // Search query parameter
-//     const label = searchParams.get('label') || 'INBOX';  // Default to 'INBOX' if no label is provided
-//     const pageToken = searchParams.get('pageToken') || null;  // Handle pagination
+//     const userTokens = await getUserTokens(email);
 
-//     if (!email) {
-//       return new Response(JSON.stringify({ message: 'Email is required' }), {
-//         status: 400,
+//     if (!userTokens || !userTokens.access_token) {
+//       return new Response(JSON.stringify({ message: 'User tokens not found or invalid' }), {
+//         status: 401,
 //         headers: { 'Content-Type': 'application/json' },
 //       });
 //     }
 
-//     // Connect to the database
-//     const db = await connectToDatabase();
-//     const user = await db.collection('users').findOne({ email });
-
-//     if (!user || !user.access_token || !user.refresh_token) {
-//       return new Response(JSON.stringify({ message: 'User tokens not found' }), {
-//         status: 404,
-//         headers: { 'Content-Type': 'application/json' },
-//       });
-//     }
-
-//     // Set up OAuth2 client with Google API
 //     const oauth2Client = new google.auth.OAuth2(
 //       process.env.GOOGLE_CLIENT_ID,
 //       process.env.GOOGLE_CLIENT_SECRET
 //     );
 //     oauth2Client.setCredentials({
-//       access_token: user.access_token,
-//       refresh_token: user.refresh_token,
+//       access_token: userTokens.access_token,
+//       refresh_token: userTokens.refresh_token,
 //     });
 
 //     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-//     // Fetch email counts for different categories
-//     const categories = ['INBOX', 'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'SPAM', 'TRASH'];
-//     const labelCounts = {};
+//     // Add a delay to allow Gmail servers to apply label updates
+//     await new Promise((resolve) => setTimeout(resolve, 500));
 
-//     for (const category of categories) {
-//       const labelResponse = await gmail.users.messages.list({
-//         userId: 'me',
-//         labelIds: [category],
-//       });
-//       labelCounts[category] = labelResponse.data.resultSizeEstimate || 0;
-//     }
-
-//     // Fetch the user's emails for the specified label or search query
-//     const emailResponse = await gmail.users.messages.list({
+//     const response = await gmail.users.messages.list({
 //       userId: 'me',
-//       labelIds: query ? undefined : [label],  // Fetch based on category or search query
-//       q: query || '',  // Apply search query here
+//       labelIds: [label],
+//       q: query,
 //       maxResults: 10,
-//       pageToken: pageToken || undefined,  // Handle pagination
 //     });
 
-//     const nextPageToken = emailResponse.data.nextPageToken || null;
-
-//     if (!emailResponse.data.messages) {
-//       return new Response(JSON.stringify({ message: 'No emails found' }), {
-//         status: 404,
+//     // Ensure that messages exist in the response
+//     if (!response.data.messages) {
+//       return new Response(JSON.stringify({ messages: [] }), {
+//         status: 200,
 //         headers: { 'Content-Type': 'application/json' },
 //       });
 //     }
 
-//     // Helper function to decode Base64 content
-//     const decodeBase64 = (str) => {
-//       return Buffer.from(str, 'base64').toString('utf-8');
-//     };
+//     const messagePromises = response.data.messages.map(async (message) => {
+//       const msg = await gmail.users.messages.get({ userId: 'me', id: message.id });
 
-//     // Function to handle email parts and extract HTML or plain text
-//     const getMessageBody = (message) => {
-//       let htmlPart = null;
-//       let plainPart = null;
+//       // Check that the message has the correct label to avoid cached issues
+//       if (!msg.data.labelIds.includes(label)) {
+//         return null;
+//       }
 
-//       const findPart = (parts) => {
-//         for (const part of parts) {
-//           if (part.mimeType === 'text/html') {
-//             htmlPart = part;
-//           } else if (part.mimeType === 'text/plain') {
-//             plainPart = part;
-//           } else if (part.parts) {
-//             findPart(part.parts);  // Recursively check for parts
-//           }
-//         }
+//       const decodeBase64 = (data) => {
+//         if (!data) return '';  // Handle missing data
+//         return Buffer.from(data, 'base64').toString('utf-8');
 //       };
 
-//       if (message.payload.parts) {
-//         findPart(message.payload.parts);
-//       }
+//       const getMessageBody = (message) => {
+//         let body = '';
+//         const parts = message.payload.parts || [message.payload];  // Handle both single-part and multi-part emails
 
-//       if (htmlPart && htmlPart.body.data) {
-//         return decodeBase64(htmlPart.body.data);  // Return HTML content
-//       } else if (plainPart && plainPart.body.data) {
-//         return decodeBase64(plainPart.body.data);  // Fallback to plain text
-//       }
+//         for (const part of parts) {
+//           if (part.mimeType === 'text/html' && part.body?.data) {
+//             body = decodeBase64(part.body.data);
+//             break;  // Prioritize HTML content
+//           } else if (part.mimeType === 'text/plain' && part.body?.data) {
+//             body = decodeBase64(part.body.data);
+//           }
+//         }
 
-//       return '';  // Default empty string if no content found
-//     };
+//         return body || 'No content available';
+//       };
 
-//     // Fetch and decode each message
-//     const messagePromises = emailResponse.data.messages.map(async (message) => {
-//       const msg = await gmail.users.messages.get({ userId: 'me', id: message.id });
-//       const body = getMessageBody(msg.data);  // Get decoded HTML/plain text body
+//       const body = getMessageBody(msg.data);
 
 //       return {
 //         id: msg.data.id,
+//         threadId: msg.data.threadId,
 //         subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
 //         from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
-//         body,  // Now contains decoded content
+//         body,
+//         snippet: msg.data.snippet,
 //         timestamp: new Date(parseInt(msg.data.internalDate)),
 //       };
 //     });
 
-//     const messages = await Promise.all(messagePromises);
+//     const messages = (await Promise.all(messagePromises)).filter(Boolean);
+//     return new Response(JSON.stringify({ messages }), {
+//       status: 200,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   } catch (error) {
+//     console.error('Error fetching emails:', error);
+//     return new Response(JSON.stringify({ message: 'Internal server error', details: error.message }), {
+//       status: 500,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   }
+// }
 
-//     return new Response(
-//       JSON.stringify({
-//         labelCounts,
-//         messages,
-//         nextPageToken,  // Return nextPageToken for pagination
-//       }),
-//       {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { google } from 'googleapis';
+// import { getSession } from '@auth0/nextjs-auth0';
+// import { connectToDatabase } from '@/lib/mongodb';
+// import { classifyEmailContent } from '../../../../utils/openai';
+// import { archiveEmail, deleteEmail } from '../../../../utils/emailActions';
+// import getUserTokens from '@/lib/getUserTokens';
+
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const email = searchParams.get('email');
+
+//   if (!email) {
+//     return new Response(JSON.stringify({ message: 'Email is required' }), {
+//       status: 400,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   }
+
+//   try {
+//     console.log("GET request received at /api/auth/google/fetchEmails");
+
+//     // Retrieve user session and check authentication
+//     const session = await getSession(req);
+//     const user = session?.user;
+
+//     if (!user) {
+//       return new Response(JSON.stringify({ message: 'User not authenticated' }), {
+//         status: 401,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     console.log(`Fetching tokens for email: ${email} with userId: ${user.sub}`);
+
+//     // Get tokens from database using user's email
+//     const userTokens = await getUserTokens(email);
+//     console.log("Retrieved user tokens:", userTokens);
+
+//     if (!userTokens || !userTokens.access_token || !userTokens.refresh_token) {
+//       return new Response(JSON.stringify({ message: 'User tokens not found or incomplete' }), {
+//         status: 401,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     const oauth2Client = new google.auth.OAuth2(
+//       process.env.GOOGLE_CLIENT_ID,
+//       process.env.GOOGLE_CLIENT_SECRET
+//     );
+//     oauth2Client.setCredentials({
+//       access_token: userTokens.access_token,
+//       refresh_token: userTokens.refresh_token,
+//     });
+//     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+//     console.log("Fetching unread emails...");
+//     const response = await gmail.users.messages.list({
+//       userId: 'me',
+//       q: 'is:unread',
+//       maxResults: 10,
+//     });
+
+//     if (!response.data.messages) {
+//       console.log("No unread emails found.");
+//       return new Response(JSON.stringify({ messages: [] }), {
 //         status: 200,
 //         headers: { 'Content-Type': 'application/json' },
-//       }
-//     );
-//   } catch (error) {
-//     console.error('Error in /api/auth/google/fetchEmails:', error);
-//     return new Response(
-//       JSON.stringify({ message: 'Internal server error', details: error.message }),
-//       {
-//         status: 500,
+//       });
+//     }
+
+//     console.log("Connecting to MongoDB to retrieve user rules");
+//     const db = await connectToDatabase();
+//     const userRules = await db
+//       .collection('Rules')
+//       .find({ userId: user.sub, status: { $in: [true, "true"] } })
+//       .toArray();
+
+//     if (userRules.length === 0) {
+//       console.log("No active rules found for this user");
+//       return new Response(JSON.stringify({ messages: [] }), {
+//         status: 200,
 //         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     console.log(`Found ${userRules.length} active rule(s) for user.`);
+
+//     const processedEmails = await Promise.all(
+//       response.data.messages.map(async (message) => {
+//         const msg = await gmail.users.messages.get({
+//           userId: 'me',
+//           id: message.id,
+//         });
+
+//         const emailBody = Buffer.from(
+//           msg.data.payload?.parts?.[0]?.body?.data || '',
+//           'base64'
+//         ).toString('utf-8');
+
+//         for (const rule of userRules) {
+//           console.log(`Applying rule with prompt: ${rule.promptText}`);
+
+//           const classification = await classifyEmailContent(emailBody, rule.promptText);
+//           console.log(`Classification result: ${classification}`);
+
+//           // Normalize classification and rule group for flexible matching
+//           const normalizedClassification = classification.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+//           const normalizedGroup = rule.group.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+
+//           // Check if the normalized classification contains the normalized group keyword
+//           if (normalizedClassification.includes(normalizedGroup)) {
+//             console.log(`Rule matched! Applying action: ${rule.action}`);
+
+//             if (rule.action === 'archive') {
+//               await archiveEmail(gmail, message.id);
+//               console.log(`Email archived: ${message.id}`);
+//             } else if (rule.action === 'delete') {
+//               await deleteEmail(gmail, message.id);
+//               console.log(`Email deleted: ${message.id}`);
+//             }
+
+//             await db.collection('ProcessedEmails').updateOne(
+//               { userId: user.sub },
+//               {
+//                 $push: {
+//                   processedEmails: {
+//                     emailId: message.id,
+//                     label: rule.group,
+//                     action: rule.action,
+//                     timestamp: new Date(),
+//                   },
+//                 },
+//               },
+//               { upsert: true }
+//             );
+//             console.log(`Processed email recorded in database for email ID: ${message.id}`);
+//             break;
+//           } else {
+//             console.log(`No matching rule for classification: ${classification}`);
+//           }
+//         }
+
+//         return {
+//           id: message.id,
+//           subject:
+//             msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+//           from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+//           snippet: msg.data.snippet,
+//           timestamp: new Date(parseInt(msg.data.internalDate)),
+//         };
+//       })
+//     );
+
+//     const filteredEmails = processedEmails.filter(Boolean);
+
+//     return new Response(JSON.stringify({ messages: filteredEmails }), {
+//       status: 200,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   } catch (error) {
+//     console.error('Error fetching emails:', error);
+//     return new Response(
+//       JSON.stringify({
+//         message: 'Internal server error',
+//         details: error.message,
+//       }),
+//       { status: 500, headers: { 'Content-Type': 'application/json' } }
+//     );
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { google } from 'googleapis';
+// import { getSession } from '@auth0/nextjs-auth0';
+// import { connectToDatabase } from '@/lib/mongodb';
+// import { classifyEmailContent } from '../../../../utils/openai';
+// import { archiveEmail, deleteEmail } from '../../../../utils/emailActions';
+// import getUserTokens from '@/lib/getUserTokens';
+
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const email = searchParams.get('email');
+
+//   if (!email) {
+//     return new Response(JSON.stringify({ message: 'Email is required' }), {
+//       status: 400,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   }
+
+//   try {
+//     console.log("GET request received at /api/auth/google/fetchEmails");
+
+//     // Retrieve user session and check authentication
+//     const session = await getSession(req);
+//     const user = session?.user;
+
+//     if (!user) {
+//       return new Response(JSON.stringify({ message: 'User not authenticated' }), {
+//         status: 401,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     console.log(`Fetching tokens for email: ${email} with userId: ${user.sub}`);
+
+//     // Get tokens from database using user's email
+//     const userTokens = await getUserTokens(email);
+//     console.log("Retrieved user tokens:", userTokens);
+
+//     if (!userTokens || !userTokens.access_token || !userTokens.refresh_token) {
+//       return new Response(JSON.stringify({ message: 'User tokens not found or incomplete' }), {
+//         status: 401,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     const oauth2Client = new google.auth.OAuth2(
+//       process.env.GOOGLE_CLIENT_ID,
+//       process.env.GOOGLE_CLIENT_SECRET
+//     );
+//     oauth2Client.setCredentials({
+//       access_token: userTokens.access_token,
+//       refresh_token: userTokens.refresh_token,
+//     });
+//     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+//     console.log("Fetching unread emails...");
+//     const response = await gmail.users.messages.list({
+//       userId: 'me',
+//       q: 'is:unread',
+//       maxResults: 10,
+//     });
+
+//     if (!response.data.messages) {
+//       console.log("No unread emails found.");
+//       return new Response(JSON.stringify({ messages: [] }), {
+//         status: 200,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     console.log("Connecting to MongoDB to retrieve user rules");
+//     const db = await connectToDatabase();
+//     const userRules = await db
+//       .collection('Rules')
+//       .find({ userId: user.sub, status: { $in: [true, "true"] } })
+//       .toArray();
+
+//     if (userRules.length === 0) {
+//       console.log("No active rules found for this user");
+//       return new Response(JSON.stringify({ messages: [] }), {
+//         status: 200,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     console.log(`Found ${userRules.length} active rule(s) for user.`);
+
+//     const applyRuleToEmail = async (rule, email) => {
+//       const primaryTag = rule.tags && rule.tags.length > 0 ? rule.tags[0] : null;
+//       const action = primaryTag ? primaryTag.label.toLowerCase() : null;
+
+//       console.log(`Applying rule with prompt: ${rule.promptText}`);
+//       console.log(`Classification result: ${rule.group || 'Unclassified'}`);
+
+//       if (action) {
+//         console.log(`Rule matched! Applying action: ${action}`);
+//         if (action === "archive") {
+//           await archiveEmail(gmail, email.id);
+//           console.log(`Email archived: ${email.id}`);
+//         } else if (action === "delete") {
+//           await deleteEmail(gmail, email.id);
+//           console.log(`Email deleted: ${email.id}`);
+//         }
+//       } else {
+//         console.log("No action defined for this rule.");
+//       }
+
+//       // Record processed email in the database
+//       await db.collection('ProcessedEmails').updateOne(
+//         { userId: user.sub },
+//         {
+//           $push: {
+//             processedEmails: {
+//               emailId: email.id,
+//               label: rule.group,
+//               action: action,
+//               timestamp: new Date(),
+//             },
+//           },
+//         },
+//         { upsert: true }
+//       );
+//       console.log(`Processed email recorded in database for email ID: ${email.id}`);
+//     };
+
+//     const processedEmails = await Promise.all(
+//       response.data.messages.map(async (message) => {
+//         const msg = await gmail.users.messages.get({
+//           userId: 'me',
+//           id: message.id,
+//         });
+
+//         const emailBody = Buffer.from(
+//           msg.data.payload?.parts?.[0]?.body?.data || '',
+//           'base64'
+//         ).toString('utf-8');
+
+//         for (const rule of userRules) {
+//           console.log(`Applying rule with prompt: ${rule.promptText}`);
+
+//           const classification = await classifyEmailContent(emailBody, rule.promptText);
+//           console.log(`Classification result: ${classification}`);
+
+//           // Normalize classification and rule group for flexible matching
+//           const normalizedClassification = classification.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+//           const normalizedGroup = rule.group.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+
+//           // Check if the normalized classification contains the normalized group keyword
+//           if (normalizedClassification.includes(normalizedGroup)) {
+//             await applyRuleToEmail(rule, message);
+//             break;
+//           } else {
+//             console.log(`No matching rule for classification: ${classification}`);
+//           }
+//         }
+
+//         return {
+//           id: message.id,
+//           subject:
+//             msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+//           from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+//           snippet: msg.data.snippet,
+//           timestamp: new Date(parseInt(msg.data.internalDate)),
+//         };
+//       })
+//     );
+
+//     const filteredEmails = processedEmails.filter(Boolean);
+
+//     return new Response(JSON.stringify({ messages: filteredEmails }), {
+//       status: 200,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   } catch (error) {
+//     console.error('Error fetching emails:', error);
+//     return new Response(
+//       JSON.stringify({
+//         message: 'Internal server error',
+//         details: error.message,
+//       }),
+//       { status: 500, headers: { 'Content-Type': 'application/json' } }
+//     );
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { google } from 'googleapis';
+// import { getSession } from '@auth0/nextjs-auth0';
+// import { connectToDatabase } from '@/lib/mongodb';
+// import { classifyEmailContent } from '../../../../utils/openai';
+// import { archiveEmail, deleteEmail } from '../../../../utils/emailActions';
+// import getUserTokens from '@/lib/getUserTokens';
+
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const email = searchParams.get('email');
+
+//   if (!email) {
+//     return new Response(JSON.stringify({ message: 'Email is required' }), {
+//       status: 400,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   }
+
+//   try {
+//     console.log("GET request received at /api/auth/google/fetchEmails");
+
+//     const session = await getSession(req);
+//     const user = session?.user;
+
+//     if (!user) {
+//       return new Response(JSON.stringify({ message: 'User not authenticated' }), {
+//         status: 401,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     console.log(`Fetching tokens for email: ${email} with userId: ${user.sub}`);
+
+//     const userTokens = await getUserTokens(email);
+//     if (!userTokens || !userTokens.access_token || !userTokens.refresh_token) {
+//       return new Response(JSON.stringify({ message: 'User tokens not found or incomplete' }), {
+//         status: 401,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     const oauth2Client = new google.auth.OAuth2(
+//       process.env.GOOGLE_CLIENT_ID,
+//       process.env.GOOGLE_CLIENT_SECRET
+//     );
+//     oauth2Client.setCredentials({
+//       access_token: userTokens.access_token,
+//       refresh_token: userTokens.refresh_token,
+//     });
+//     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+//     console.log("Fetching unread emails...");
+//     const response = await gmail.users.messages.list({
+//       userId: 'me',
+//       q: 'is:unread',
+//       maxResults: 10,
+//     });
+
+//     if (!response.data.messages) {
+//       console.log("No unread emails found.");
+//       return new Response(JSON.stringify({ messages: [] }), {
+//         status: 200,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     console.log("Connecting to MongoDB to retrieve user rules and processed emails");
+//     const db = await connectToDatabase();
+
+//     // Fetch all processed email IDs for the user
+//     const processedEmailsData = await db.collection('ProcessedEmails').findOne({ userId: user.sub });
+//     const processedEmailIds = new Set(processedEmailsData?.processedEmails.map(e => e.emailId) || []);
+
+//     const userRules = await db
+//       .collection('Rules')
+//       .find({ userId: user.sub, status: { $in: [true, "true"] } })
+//       .toArray();
+
+//     if (userRules.length === 0) {
+//       console.log("No active rules found for this user");
+//       // Return all unread emails for display purposes
+//       const messages = await fetchAllUnreadMessages(response, gmail);
+//       return new Response(JSON.stringify({ messages }), {
+//         status: 200,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     console.log(`Found ${userRules.length} active rule(s) for user.`);
+
+//     const applyRuleToEmail = async (rule, email) => {
+//       const primaryTag = rule.tags && rule.tags.length > 0 ? rule.tags[0] : null;
+//       const action = primaryTag ? primaryTag.label.toLowerCase() : null;
+
+//       console.log(`Applying rule with prompt: ${rule.promptText}`);
+//       console.log(`Classification result: ${rule.group || 'Unclassified'}`);
+
+//       if (action) {
+//         console.log(`Rule matched! Applying action: ${action}`);
+//         if (action === "archive") {
+//           await archiveEmail(gmail, email.id);
+//           console.log(`Email archived: ${email.id}`);
+//         } else if (action === "delete") {
+//           await deleteEmail(gmail, email.id);
+//           console.log(`Email deleted: ${email.id}`);
+//         }
+//       } else {
+//         console.log("No action defined for this rule.");
+//       }
+
+//       // Record processed email in the database
+//       await db.collection('ProcessedEmails').updateOne(
+//         { userId: user.sub },
+//         {
+//           $push: {
+//             processedEmails: {
+//               emailId: email.id,
+//               label: rule.group,
+//               action: action,
+//               timestamp: new Date(),
+//             },
+//           },
+//         },
+//         { upsert: true }
+//       );
+//       console.log(`Processed email recorded in database for email ID: ${email.id}`);
+//     };
+
+//     const fetchAllUnreadMessages = async (response, gmail) => {
+//       return Promise.all(
+//         response.data.messages.map(async (message) => {
+//           const msg = await gmail.users.messages.get({
+//             userId: 'me',
+//             id: message.id,
+//           });
+//           return {
+//             id: message.id,
+//             subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+//             from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+//             snippet: msg.data.snippet,
+//             timestamp: new Date(parseInt(msg.data.internalDate)),
+//           };
+//         })
+//       );
+//     };
+
+//     // Process emails that have not been previously processed
+//     const processedEmails = await Promise.all(
+//       response.data.messages.map(async (message) => {
+//         if (processedEmailIds.has(message.id)) {
+//           console.log(`Skipping already processed email ID: ${message.id}`);
+//           return null;
+//         }
+
+//         const msg = await gmail.users.messages.get({
+//           userId: 'me',
+//           id: message.id,
+//         });
+
+//         const emailBody = Buffer.from(
+//           msg.data.payload?.parts?.[0]?.body?.data || '',
+//           'base64'
+//         ).toString('utf-8');
+
+//         for (const rule of userRules) {
+//           const classification = await classifyEmailContent(emailBody, rule.promptText);
+//           console.log(`Classification result: ${classification}`);
+
+//           const normalizedClassification = classification.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+//           const normalizedGroup = rule.group.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+
+//           if (normalizedClassification.includes(normalizedGroup)) {
+//             await applyRuleToEmail(rule, message);
+//             break;
+//           } else {
+//             console.log(`No matching rule for classification: ${classification}`);
+//           }
+//         }
+
+//         return {
+//           id: message.id,
+//           subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+//           from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+//           snippet: msg.data.snippet,
+//           timestamp: new Date(parseInt(msg.data.internalDate)),
+//         };
+//       })
+//     );
+
+//     const filteredEmails = processedEmails.filter(Boolean);
+    
+//     // If no new emails to process, display all unread emails
+//     if (filteredEmails.length === 0) {
+//       const messages = await fetchAllUnreadMessages(response, gmail);
+//       return new Response(JSON.stringify({ messages }), {
+//         status: 200,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     return new Response(JSON.stringify({ messages: filteredEmails }), {
+//       status: 200,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   } catch (error) {
+//     console.error('Error fetching emails:', error);
+//     return new Response(
+//       JSON.stringify({
+//         message: 'Internal server error',
+//         details: error.message,
+//       }),
+//       { status: 500, headers: { 'Content-Type': 'application/json' }
 //       }
 //     );
 //   }
@@ -148,163 +759,270 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // import { google } from 'googleapis';
-// import { connectToDatabase } from '@/lib/database';
+// import { getSession } from '@auth0/nextjs-auth0';
+// import { connectToDatabase } from '@/lib/mongodb';
+// import { classifyEmailContent } from '../../../../utils/openai';
+// import { archiveEmail, deleteEmail } from '../../../../utils/emailActions';
+// import getUserTokens from '@/lib/getUserTokens';
 
 // export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const email = searchParams.get('email');
+
+//   if (!email) {
+//     return new Response(JSON.stringify({ message: 'Email is required' }), {
+//       status: 400,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   }
+
 //   try {
-//     const { searchParams } = new URL(req.url);
-//     const email = searchParams.get('email');
-//     const query = searchParams.get('query') || '';  // Search query parameter
-//     const label = searchParams.get('label') || 'INBOX';  // Default to 'INBOX' if no label is provided
-//     const pageToken = searchParams.get('pageToken') || null;  // Handle pagination
+//     console.log("GET request received at /api/auth/google/fetchEmails");
 
-//     if (!email) {
-//       return new Response(JSON.stringify({ message: 'Email is required' }), {
-//         status: 400,
+//     // Define fetchAllUnreadMessages here at the beginning
+//     const fetchAllUnreadMessages = async (response, gmail) => {
+//       return Promise.all(
+//         response.data.messages.map(async (message) => {
+//           const msg = await gmail.users.messages.get({
+//             userId: 'me',
+//             id: message.id,
+//           });
+//           return {
+//             id: message.id,
+//             subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+//             from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+//             snippet: msg.data.snippet,
+//             timestamp: new Date(parseInt(msg.data.internalDate)),
+//           };
+//         })
+//       );
+//     };
+
+//     const session = await getSession(req);
+//     const user = session?.user;
+
+//     if (!user) {
+//       return new Response(JSON.stringify({ message: 'User not authenticated' }), {
+//         status: 401,
 //         headers: { 'Content-Type': 'application/json' },
 //       });
 //     }
 
-//     // Connect to the database
-//     const db = await connectToDatabase();
-//     const user = await db.collection('users').findOne({ email });
+//     console.log(`Fetching tokens for email: ${email} with userId: ${user.sub}`);
 
-//     if (!user || !user.access_token || !user.refresh_token) {
-//       return new Response(JSON.stringify({ message: 'User tokens not found' }), {
-//         status: 404,
+//     const userTokens = await getUserTokens(email);
+//     if (!userTokens || !userTokens.access_token || !userTokens.refresh_token) {
+//       return new Response(JSON.stringify({ message: 'User tokens not found or incomplete' }), {
+//         status: 401,
 //         headers: { 'Content-Type': 'application/json' },
 //       });
 //     }
 
-//     // Set up OAuth2 client with Google API
 //     const oauth2Client = new google.auth.OAuth2(
 //       process.env.GOOGLE_CLIENT_ID,
 //       process.env.GOOGLE_CLIENT_SECRET
 //     );
 //     oauth2Client.setCredentials({
-//       access_token: user.access_token,
-//       refresh_token: user.refresh_token,
+//       access_token: userTokens.access_token,
+//       refresh_token: userTokens.refresh_token,
 //     });
-
 //     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-//     // Fetch email counts for different categories
-//     const categories = ['INBOX', 'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'SPAM', 'TRASH', 'DRAFT', 'SENT', 'STARRED'];
-//     const labelCounts = {};
-
-//     for (const category of categories) {
-//       const labelResponse = await gmail.users.messages.list({
-//         userId: 'me',
-//         labelIds: [category],
-//       });
-//       labelCounts[category] = labelResponse.data.resultSizeEstimate || 0;
-//     }
-
-//     // Fetch the user's emails for the specified label or search query
-//     const emailResponse = await gmail.users.messages.list({
+//     console.log("Fetching unread emails...");
+//     const response = await gmail.users.messages.list({
 //       userId: 'me',
-//       labelIds: query ? undefined : [label],  // Fetch based on category or search query
-//       q: query || '',  // Apply search query here
+//       q: 'is:unread',
 //       maxResults: 10,
-//       pageToken: pageToken || undefined,  // Handle pagination
 //     });
 
-//     const nextPageToken = emailResponse.data.nextPageToken || null;
-
-//     if (!emailResponse.data.messages) {
-//       return new Response(JSON.stringify({ message: 'No emails found' }), {
-//         status: 404,
-//         headers: { 'Content-Type': 'application/json' },
-//       });
-//     }
-
-//     // Helper function to decode Base64 content
-//     const decodeBase64 = (str) => {
-//       return Buffer.from(str, 'base64').toString('utf-8');
-//     };
-
-//     // Function to handle email parts and extract HTML or plain text
-//     const getMessageBody = (message) => {
-//       let htmlPart = null;
-//       let plainPart = null;
-
-//       const findPart = (parts) => {
-//         for (const part of parts) {
-//           if (part.mimeType === 'text/html') {
-//             htmlPart = part;
-//           } else if (part.mimeType === 'text/plain') {
-//             plainPart = part;
-//           } else if (part.parts) {
-//             findPart(part.parts);  // Recursively check for parts
-//           }
-//         }
-//       };
-
-//       if (message.payload.parts) {
-//         findPart(message.payload.parts);
-//       }
-
-//       if (htmlPart && htmlPart.body.data) {
-//         return decodeBase64(htmlPart.body.data);  // Return HTML content
-//       } else if (plainPart && plainPart.body.data) {
-//         return decodeBase64(plainPart.body.data);  // Fallback to plain text
-//       }
-
-//       return '';  // Default empty string if no content found
-//     };
-
-//     // Fetch and decode each message
-//     const messagePromises = emailResponse.data.messages.map(async (message) => {
-//       const msg = await gmail.users.messages.get({ userId: 'me', id: message.id });
-//       const body = getMessageBody(msg.data);  // Get decoded HTML/plain text body
-
-//       return {
-//         id: msg.data.id,
-//         subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
-//         from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
-//         snippet: msg.data.snippet,  // Add snippet for previews
-//         body,  // Now contains decoded content
-//         timestamp: new Date(parseInt(msg.data.internalDate)),
-//       };
-//     });
-
-//     const messages = await Promise.all(messagePromises);
-
-//     return new Response(
-//       JSON.stringify({
-//         labelCounts,
-//         messages,
-//         nextPageToken,  // Return nextPageToken for pagination
-//       }),
-//       {
+//     if (!response.data.messages) {
+//       console.log("No unread emails found.");
+//       return new Response(JSON.stringify({ messages: [] }), {
 //         status: 200,
 //         headers: { 'Content-Type': 'application/json' },
-//       }
-//     );
-//   } catch (error) {
-//     console.error('Error in /api/auth/google/fetchEmails:', error);
-//     return new Response(
-//       JSON.stringify({ message: 'Internal server error', details: error.message }),
-//       {
-//         status: 500,
+//       });
+//     }
+
+//     console.log("Connecting to MongoDB to retrieve user rules and processed emails");
+//     const db = await connectToDatabase();
+
+//     // Fetch all processed email IDs for the user
+//     const processedEmailsData = await db.collection('ProcessedEmails').findOne({ userId: user.sub });
+//     const processedEmailIds = new Set(processedEmailsData?.processedEmails.map(e => e.emailId) || []);
+
+//     const userRules = await db
+//       .collection('Rules')
+//       .find({ userId: user.sub, status: { $in: [true, "true"] } })
+//       .toArray();
+
+//     if (userRules.length === 0) {
+//       console.log("No active rules found for this user");
+//       // Return all unread emails for display purposes
+//       const messages = await fetchAllUnreadMessages(response, gmail);
+//       return new Response(JSON.stringify({ messages }), {
+//         status: 200,
 //         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     console.log(`Found ${userRules.length} active rule(s) for user.`);
+
+//     const applyRuleToEmail = async (rule, email) => {
+//       const primaryTag = rule.tags && rule.tags.length > 0 ? rule.tags[0] : null;
+//       const action = primaryTag ? primaryTag.label.toLowerCase() : null;
+
+//       console.log(`Applying rule with prompt: ${rule.promptText}`);
+//       console.log(`Classification result: ${rule.group || 'Unclassified'}`);
+
+//       if (action) {
+//         console.log(`Rule matched! Applying action: ${action}`);
+//         if (action === "archive") {
+//           await archiveEmail(gmail, email.id);
+//           console.log(`Email archived: ${email.id}`);
+//         } else if (action === "delete") {
+//           await deleteEmail(gmail, email.id);
+//           console.log(`Email deleted: ${email.id}`);
+//         }
+//       } else {
+//         console.log("No action defined for this rule.");
+//       }
+
+//       // Record processed email in the database
+//       await db.collection('ProcessedEmails').updateOne(
+//         { userId: user.sub },
+//         {
+//           $push: {
+//             processedEmails: {
+//               emailId: email.id,
+//               label: rule.group,
+//               action: action,
+//               timestamp: new Date(),
+//             },
+//           },
+//         },
+//         { upsert: true }
+//       );
+//       console.log(`Processed email recorded in database for email ID: ${email.id}`);
+//     };
+
+//     // Process emails that have not been previously processed
+//     const processedEmails = await Promise.all(
+//       response.data.messages.map(async (message) => {
+//         if (processedEmailIds.has(message.id)) {
+//           console.log(`Skipping already processed email ID: ${message.id}`);
+//           return null;
+//         }
+
+//         const msg = await gmail.users.messages.get({
+//           userId: 'me',
+//           id: message.id,
+//         });
+
+//         const emailBody = Buffer.from(
+//           msg.data.payload?.parts?.[0]?.body?.data || '',
+//           'base64'
+//         ).toString('utf-8');
+
+//         for (const rule of userRules) {
+//           const classification = await classifyEmailContent(emailBody, rule.promptText);
+//           console.log(`Classification result: ${classification}`);
+
+//           const normalizedClassification = classification.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+//           const normalizedGroup = rule.group.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+
+//           if (normalizedClassification.includes(normalizedGroup)) {
+//             await applyRuleToEmail(rule, message);
+//             break;
+//           } else {
+//             console.log(`No matching rule for classification: ${classification}`);
+//           }
+//         }
+
+//         return {
+//           id: message.id,
+//           subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+//           from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+//           snippet: msg.data.snippet,
+//           timestamp: new Date(parseInt(msg.data.internalDate)),
+//         };
+//       })
+//     );
+
+//     const filteredEmails = processedEmails.filter(Boolean);
+    
+//     // If no new emails to process, display all unread emails
+//     if (filteredEmails.length === 0) {
+//       const messages = await fetchAllUnreadMessages(response, gmail);
+//       return new Response(JSON.stringify({ messages }), {
+//         status: 200,
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//     }
+
+//     return new Response(JSON.stringify({ messages: filteredEmails }), {
+//       status: 200,
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//   } catch (error) {
+//     console.error('Error fetching emails:', error);
+//     return new Response(
+//       JSON.stringify({
+//         message: 'Internal server error',
+//         details: error.message,
+//       }),
+//       { status: 500, headers: { 'Content-Type': 'application/json' }
 //       }
 //     );
 //   }
 // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 import { google } from 'googleapis';
+import { getSession } from '@auth0/nextjs-auth0';
+import { connectToDatabase } from '@/lib/mongodb';
+import { classifyEmailContent } from '../../../../utils/openai';
+import { archiveEmail, deleteEmail } from '../../../../utils/emailActions';
 import getUserTokens from '@/lib/getUserTokens';
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get('email');
-  const label = searchParams.get('label') || 'INBOX';  // Default label to INBOX if none is provided
-  const query = searchParams.get('query') || '';  // Handle search queries if provided
 
   if (!email) {
     return new Response(JSON.stringify({ message: 'Email is required' }), {
@@ -314,10 +1032,68 @@ export async function GET(req) {
   }
 
   try {
-    const userTokens = await getUserTokens(email);
+    console.log("GET request received at /api/auth/google/fetchEmails");
 
-    if (!userTokens || !userTokens.access_token) {
-      return new Response(JSON.stringify({ message: 'User tokens not found or invalid' }), {
+    // Helper function to fetch and decode full email body
+    const fetchAllUnreadMessages = async (response, gmail) => {
+      return Promise.all(
+        response.data.messages.map(async (message) => {
+          const msg = await gmail.users.messages.get({
+            userId: 'me',
+            id: message.id,
+          });
+
+          // Decode the email body
+          const decodeBase64 = (data) => {
+            if (!data) return '';
+            return Buffer.from(data, 'base64').toString('utf-8');
+          };
+
+          const getMessageBody = (message) => {
+            let body = '';
+            const parts = message.payload.parts || [message.payload];
+
+            for (const part of parts) {
+              if (part.mimeType === 'text/html' && part.body?.data) {
+                body = decodeBase64(part.body.data);
+                break;
+              } else if (part.mimeType === 'text/plain' && part.body?.data) {
+                body = decodeBase64(part.body.data);
+              }
+            }
+            return body || 'No content available';
+          };
+
+          const body = getMessageBody(msg.data);
+
+          return {
+            id: msg.data.id,
+            threadId: msg.data.threadId,
+            subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+            from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+            body,  // Include the full decoded body
+            snippet: msg.data.snippet,
+            timestamp: new Date(parseInt(msg.data.internalDate)),
+          };
+        })
+      );
+    };
+
+    const session = await getSession(req);
+    const user = session?.user;
+
+    if (!user) {
+      return new Response(JSON.stringify({ message: 'User not authenticated' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`Fetching tokens for email: ${email} with userId: ${user.sub}`);
+
+    const userTokens = await getUserTokens(email);
+    if (!userTokens || !userTokens.access_token || !userTokens.refresh_token) {
+      return new Response(JSON.stringify({ message: 'User tokens not found or incomplete' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -331,79 +1107,152 @@ export async function GET(req) {
       access_token: userTokens.access_token,
       refresh_token: userTokens.refresh_token,
     });
-
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // Add a delay to allow Gmail servers to apply label updates
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
+    console.log("Fetching unread emails...");
     const response = await gmail.users.messages.list({
       userId: 'me',
-      labelIds: [label],
-      q: query,
+      q: 'is:unread',
       maxResults: 10,
     });
 
-    // Ensure that messages exist in the response
     if (!response.data.messages) {
+      console.log("No unread emails found.");
       return new Response(JSON.stringify({ messages: [] }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const messagePromises = response.data.messages.map(async (message) => {
-      const msg = await gmail.users.messages.get({ userId: 'me', id: message.id });
+    console.log("Connecting to MongoDB to retrieve user rules and processed emails");
+    const db = await connectToDatabase();
 
-      // Check that the message has the correct label to avoid cached issues
-      if (!msg.data.labelIds.includes(label)) {
-        return null;
+    // Fetch all processed email IDs for the user
+    const processedEmailsData = await db.collection('ProcessedEmails').findOne({ userId: user.sub });
+    const processedEmailIds = new Set(processedEmailsData?.processedEmails.map(e => e.emailId) || []);
+
+    const userRules = await db
+      .collection('Rules')
+      .find({ userId: user.sub, status: { $in: [true, "true"] } })
+      .toArray();
+
+    if (userRules.length === 0) {
+      console.log("No active rules found for this user");
+      // Return all unread emails for display purposes
+      const messages = await fetchAllUnreadMessages(response, gmail);
+      return new Response(JSON.stringify({ messages }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`Found ${userRules.length} active rule(s) for user.`);
+
+    const applyRuleToEmail = async (rule, email) => {
+      const primaryTag = rule.tags && rule.tags.length > 0 ? rule.tags[0] : null;
+      const action = primaryTag ? primaryTag.label.toLowerCase() : null;
+
+      console.log(`Applying rule with prompt: ${rule.promptText}`);
+      console.log(`Classification result: ${rule.group || 'Unclassified'}`);
+
+      if (action) {
+        console.log(`Rule matched! Applying action: ${action}`);
+        if (action === "archive") {
+          await archiveEmail(gmail, email.id);
+          console.log(`Email archived: ${email.id}`);
+        } else if (action === "delete") {
+          await deleteEmail(gmail, email.id);
+          console.log(`Email deleted: ${email.id}`);
+        }
+      } else {
+        console.log("No action defined for this rule.");
       }
 
-      const decodeBase64 = (data) => {
-        if (!data) return '';  // Handle missing data
-        return Buffer.from(data, 'base64').toString('utf-8');
-      };
+      // Record processed email in the database
+      await db.collection('ProcessedEmails').updateOne(
+        { userId: user.sub },
+        {
+          $push: {
+            processedEmails: {
+              emailId: email.id,
+              label: rule.group,
+              action: action,
+              timestamp: new Date(),
+            },
+          },
+        },
+        { upsert: true }
+      );
+      console.log(`Processed email recorded in database for email ID: ${email.id}`);
+    };
 
-      const getMessageBody = (message) => {
-        let body = '';
-        const parts = message.payload.parts || [message.payload];  // Handle both single-part and multi-part emails
+    // Process emails that have not been previously processed
+    const processedEmails = await Promise.all(
+      response.data.messages.map(async (message) => {
+        if (processedEmailIds.has(message.id)) {
+          console.log(`Skipping already processed email ID: ${message.id}`);
+          return null;
+        }
 
-        for (const part of parts) {
-          if (part.mimeType === 'text/html' && part.body?.data) {
-            body = decodeBase64(part.body.data);
-            break;  // Prioritize HTML content
-          } else if (part.mimeType === 'text/plain' && part.body?.data) {
-            body = decodeBase64(part.body.data);
+        const msg = await gmail.users.messages.get({
+          userId: 'me',
+          id: message.id,
+        });
+
+        const emailBody = Buffer.from(
+          msg.data.payload?.parts?.[0]?.body?.data || '',
+          'base64'
+        ).toString('utf-8');
+
+        for (const rule of userRules) {
+          const classification = await classifyEmailContent(emailBody, rule.promptText);
+          console.log(`Classification result: ${classification}`);
+
+          const normalizedClassification = classification.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+          const normalizedGroup = rule.group.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
+
+          if (normalizedClassification.includes(normalizedGroup)) {
+            await applyRuleToEmail(rule, message);
+            break;
+          } else {
+            console.log(`No matching rule for classification: ${classification}`);
           }
         }
 
-        return body || 'No content available';
-      };
+        return {
+          id: message.id,
+          subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+          from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+          body: emailBody,  // Include full email body here
+          snippet: msg.data.snippet,
+          timestamp: new Date(parseInt(msg.data.internalDate)),
+        };
+      })
+    );
 
-      const body = getMessageBody(msg.data);
+    const filteredEmails = processedEmails.filter(Boolean);
 
-      return {
-        id: msg.data.id,
-        threadId: msg.data.threadId,
-        subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
-        from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
-        body,
-        snippet: msg.data.snippet,
-        timestamp: new Date(parseInt(msg.data.internalDate)),
-      };
-    });
+    // If no new emails to process, display all unread emails
+    if (filteredEmails.length === 0) {
+      const messages = await fetchAllUnreadMessages(response, gmail);
+      return new Response(JSON.stringify({ messages }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
-    const messages = (await Promise.all(messagePromises)).filter(Boolean);
-    return new Response(JSON.stringify({ messages }), {
+    return new Response(JSON.stringify({ messages: filteredEmails }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error fetching emails:', error);
-    return new Response(JSON.stringify({ message: 'Internal server error', details: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        message: 'Internal server error',
+        details: error.message,
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }
