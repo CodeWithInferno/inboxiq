@@ -296,31 +296,15 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // 'use client';
 
 // import { useRouter, useParams } from 'next/navigation';
-// import { useEffect, useState, useRef } from 'react';
+// import { useEffect, useState } from 'react';
 // import { useUser } from '@auth0/nextjs-auth0/client';
 // import Sidebar from '../components/Sidebar';
 // import MessageDetails from '../components/MessageDetails';
 // import Compose from '../components/Compose';
-// import { FaExclamationCircle } from 'react-icons/fa';
+// import { FaExclamationCircle, FaSearch } from 'react-icons/fa';
 // import { debounce } from 'lodash';
 
 // const DashboardPage = () => {
@@ -338,8 +322,7 @@
 //   const [searchMode, setSearchMode] = useState(false);
 //   const [isComposeOpen, setIsComposeOpen] = useState(false);
 //   const [isClassifying, setIsClassifying] = useState(false);
-
-//   const loaderRef = useRef(null);
+//   const [isBlocking, setIsBlocking] = useState(false);
 
 //   useEffect(() => {
 //     if (!slug) {
@@ -413,48 +396,40 @@
 //     );
 //   };
 
-//   const labelEmails = async () => {
-//     return await Promise.all(
-//       emails.map(async (email) => {
-//         console.log("Sending email to label:", email); // Log email data
-//         try {
-//           const emailContent = { id: email.id, subject: email.subject, body: email.snippet };
-//           const response = await fetch('/api/ai/email/labeling', {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify({ email: emailContent }),
-//           });
-//           const { category } = await response.json();
-//           return { ...email, category };
-//         } catch (error) {
-//           console.error('Error labeling email:', error.message);
-//           return { ...email, category: 'Unclassified' };
-//         }
-//       })
-//     );
-//   };
-  
-
 //   const handleLabelEmails = async () => {
-//     console.log('Label Emails button clicked');
 //     setIsClassifying(true);
 //     const label = getGmailLabel(slug);
-//     console.log('Label:', label);
 //     if (user?.email) {
-//       console.log('User email:', user.email);
 //       const labeledEmails = await labelEmails();
-//       console.log('Labeled Emails:', labeledEmails);
 //       setEmails(labeledEmails);
 //     }
-//     setTimeout(() => setIsClassifying(false), 60000); // Disable for 1 minute
+//     setTimeout(() => setIsClassifying(false), 60000);
+//   };
+
+//   const handleBlockColdEmails = async () => {
+//     setIsBlocking(true);
+//     try {
+//       const response = await fetch('/api/Rules/ColdEmail/BlockCold', {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ email: user.email }),
+//       });
+//       if (!response.ok) {
+//         throw new Error('Failed to block cold emails');
+//       }
+//       const data = await response.json();
+//       setEmails((prevEmails) => prevEmails.filter(email => !data.blockedEmails.includes(email.id)));
+//     } catch (error) {
+//       console.error('Error blocking cold emails:', error.message);
+//     } finally {
+//       setIsBlocking(false);
+//     }
 //   };
 
 //   const handleOpenMessage = (message) => {
 //     if (message && message.threadId) {
 //       setSelectedMessage(message);
 //       fetchThread(message.threadId);
-//     } else {
-//       console.error('No threadId found for this message.');
 //     }
 //   };
 
@@ -540,6 +515,13 @@
 //     setIsComposeOpen(false);
 //   };
 
+//   const handleLoadMore = () => {
+//     const label = getGmailLabel(slug);
+//     if (user?.email && nextPageToken) {
+//       fetchEmails(label, user.email, nextPageToken);
+//     }
+//   };
+
 //   useEffect(() => {
 //     if (user && slug && !searchMode) {
 //       const label = getGmailLabel(slug);
@@ -563,16 +545,19 @@
 
 //         {!selectedMessage && (
 //           <>
-//             <form className="mb-4" onSubmit={handleSearchSubmit}>
+//             <form className="mb-4 relative" onSubmit={handleSearchSubmit}>
 //               <input
 //                 type="text"
-//                 className="w-full p-3 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:border-blue-500 transition"
+//                 className="w-full p-3 pr-10 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:border-blue-500 transition"
 //                 placeholder="Search emails..."
 //                 value={searchQuery}
 //                 onChange={handleSearchChange}
 //               />
-//               <button type="submit" className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg">
-//                 Search
+//               <button
+//                 type="submit"
+//                 className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+//               >
+//                 <FaSearch size={25} />
 //               </button>
 //               {suggestions.length > 0 && (
 //                 <ul className="border border-gray-300 rounded-lg bg-white mt-2 max-h-40 overflow-y-auto">
@@ -595,9 +580,9 @@
 //               </button>
 //             )}
 
-//             <div className="flex space-x-4">
+//             <div className="flex mb-5 space-x-4">
 //               <button
-//                 className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow hover:bg-blue-700 transition"
+//                 className="bg-black text-white px-5 py-3 rounded-lg shadow hover:bg-gray-800 transition"
 //                 onClick={openComposeModal}
 //               >
 //                 Compose
@@ -606,10 +591,19 @@
 //                 onClick={handleLabelEmails}
 //                 disabled={isClassifying}
 //                 className={`px-5 py-3 rounded-lg shadow ${
-//                   isClassifying ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600 text-white'
+//                   isClassifying ? 'bg-gray-400' : 'bg-transparent text-black border'
 //                 } transition`}
 //               >
 //                 {isClassifying ? 'Labeling...' : 'Label Emails'}
+//               </button>
+//               <button
+//                 onClick={handleBlockColdEmails}
+//                 disabled={isBlocking}
+//                 className={`px-5 py-3 rounded-lg shadow ${
+//                   isBlocking ? 'bg-gray-400' : 'bg-transparent text-black border'
+//                 } transition`}
+//               >
+//                 {isBlocking ? 'Blocking...' : 'Block Cold Emails'}
 //               </button>
 //             </div>
 //           </>
@@ -635,26 +629,31 @@
 //                 <div
 //                   key={email.id}
 //                   className={`relative bg-white p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer ${
-//                     email.category === 'Spam' ? 'border border-red-500' : ''
+//                     email.priority === 'High Priority' ? 'border border-red-500' : ''
 //                   }`}
 //                   onClick={() => handleOpenMessage(email)}
 //                 >
 //                   <h2 className="font-bold text-xl mb-2">{email.subject || '(No Subject)'}</h2>
 //                   <p className="text-sm text-gray-500 truncate">From: {email.from}</p>
 //                   <p className="text-gray-600 mt-2 truncate">{email.snippet}</p>
+
+//                   {email.priority && (
+//                     <FaExclamationCircle
+//                       className={`absolute top-2 right-2 ${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'}`}
+//                       size={20}
+//                     />
+//                   )}
 //                 </div>
 //               ))}
 //             </div>
-//             <button
-//               className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
-//               onClick={() => {
-//                 if (user?.email) {
-//                   fetchEmails(getGmailLabel(slug), user.email, nextPageToken);
-//                 }
-//               }}
-//             >
-//               Load More
-//             </button>
+//             {nextPageToken && (
+//               <button
+//                 className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
+//                 onClick={handleLoadMore}
+//               >
+//                 Load More
+//               </button>
+//             )}
 //           </>
 //         )}
 //       </div>
@@ -684,7 +683,9 @@
 
 
 
-// src/app/dashboard/page.js
+
+
+
 
 'use client';
 
@@ -694,7 +695,7 @@ import { useUser } from '@auth0/nextjs-auth0/client';
 import Sidebar from '../components/Sidebar';
 import MessageDetails from '../components/MessageDetails';
 import Compose from '../components/Compose';
-import { FaExclamationCircle } from 'react-icons/fa';
+import { FaExclamationCircle, FaSearch } from 'react-icons/fa';
 import { debounce } from 'lodash';
 
 const DashboardPage = () => {
@@ -712,8 +713,7 @@ const DashboardPage = () => {
   const [searchMode, setSearchMode] = useState(false);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [isClassifying, setIsClassifying] = useState(false);
-
-  const loaderRef = useRef(null);
+  const [isBlocking, setIsBlocking] = useState(false);
 
   useEffect(() => {
     if (!slug) {
@@ -787,6 +787,7 @@ const DashboardPage = () => {
     );
   };
 
+  // Email labeling function reintroduced from the backup code
   const labelEmails = async () => {
     return await Promise.all(
       emails.map(async (email) => {
@@ -819,19 +820,35 @@ const DashboardPage = () => {
       console.log('Labeled Emails:', labeledEmails);
       setEmails(labeledEmails);
     }
-    setTimeout(() => setIsClassifying(false), 60000); // Disable for 1 minute
+    setTimeout(() => setIsClassifying(false), 60000);
+  };
+
+  const handleBlockColdEmails = async () => {
+    setIsBlocking(true);
+    try {
+      const response = await fetch('/api/Rules/ColdEmail/BlockCold', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to block cold emails');
+      }
+      const data = await response.json();
+      setEmails((prevEmails) => prevEmails.filter(email => !data.blockedEmails.includes(email.id)));
+    } catch (error) {
+      console.error('Error blocking cold emails:', error.message);
+    } finally {
+      setIsBlocking(false);
+    }
   };
 
   const handleOpenMessage = (message) => {
-    console.log("Opening message:", message); // Debugging log
     if (message && message.threadId) {
       setSelectedMessage(message);
       fetchThread(message.threadId);
-    } else {
-      console.error('No threadId found for this message.');
     }
   };
-  
 
   const fetchThread = async (threadId) => {
     try {
@@ -915,6 +932,13 @@ const DashboardPage = () => {
     setIsComposeOpen(false);
   };
 
+  const handleLoadMore = () => {
+    const label = getGmailLabel(slug);
+    if (user?.email && nextPageToken) {
+      fetchEmails(label, user.email, nextPageToken);
+    }
+  };
+
   useEffect(() => {
     if (user && slug && !searchMode) {
       const label = getGmailLabel(slug);
@@ -938,16 +962,19 @@ const DashboardPage = () => {
 
         {!selectedMessage && (
           <>
-            <form className="mb-4" onSubmit={handleSearchSubmit}>
+            <form className="mb-4 relative" onSubmit={handleSearchSubmit}>
               <input
                 type="text"
-                className="w-full p-3 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:border-blue-500 transition"
+                className="w-full p-3 pr-10 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:border-blue-500 transition"
                 placeholder="Search emails..."
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
-              <button type="submit" className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg">
-                Search
+              <button
+                type="submit"
+                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+              >
+                <FaSearch size={25} />
               </button>
               {suggestions.length > 0 && (
                 <ul className="border border-gray-300 rounded-lg bg-white mt-2 max-h-40 overflow-y-auto">
@@ -970,9 +997,9 @@ const DashboardPage = () => {
               </button>
             )}
 
-            <div className="flex space-x-4">
+            <div className="flex mb-5 space-x-4">
               <button
-                className="bg-blue-600 text-white px-5 py-3 rounded-lg shadow hover:bg-blue-700 transition"
+                className="bg-black text-white px-5 py-3 rounded-lg shadow hover:bg-gray-800 transition"
                 onClick={openComposeModal}
               >
                 Compose
@@ -981,10 +1008,19 @@ const DashboardPage = () => {
                 onClick={handleLabelEmails}
                 disabled={isClassifying}
                 className={`px-5 py-3 rounded-lg shadow ${
-                  isClassifying ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600 text-white'
+                  isClassifying ? 'bg-gray-400' : 'bg-transparent text-black border'
                 } transition`}
               >
                 {isClassifying ? 'Labeling...' : 'Label Emails'}
+              </button>
+              <button
+                onClick={handleBlockColdEmails}
+                disabled={isBlocking}
+                className={`px-5 py-3 rounded-lg shadow ${
+                  isBlocking ? 'bg-gray-400' : 'bg-transparent text-black border'
+                } transition`}
+              >
+                {isBlocking ? 'Blocking...' : 'Block Cold Emails'}
               </button>
             </div>
           </>
@@ -1017,19 +1053,24 @@ const DashboardPage = () => {
                   <h2 className="font-bold text-xl mb-2">{email.subject || '(No Subject)'}</h2>
                   <p className="text-sm text-gray-500 truncate">From: {email.from}</p>
                   <p className="text-gray-600 mt-2 truncate">{email.snippet}</p>
+
+                  {email.priority && (
+                    <FaExclamationCircle
+                      className={`absolute top-2 right-2 ${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'}`}
+                      size={20}
+                    />
+                  )}
                 </div>
               ))}
             </div>
-            <button
-              className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
-              onClick={() => {
-                if (user?.email) {
-                  fetchEmails(getGmailLabel(slug), user.email, nextPageToken);
-                }
-              }}
-            >
-              Load More
-            </button>
+            {nextPageToken && (
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
+                onClick={handleLoadMore}
+              >
+                Load More
+              </button>
+            )}
           </>
         )}
       </div>

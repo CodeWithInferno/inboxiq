@@ -412,6 +412,9 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
   const [message, setMessage] = useState({ to: '', cc: '', bcc: '', subject: '' });
   const [showHtmlPopup, setShowHtmlPopup] = useState(false);
   const [htmlInput, setHtmlInput] = useState('');
+  const [showGeneratePopup, setShowGeneratePopup] = useState(false);
+  const [templateDescription, setTemplateDescription] = useState('');
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
   const editorRef = useRef(null);
 
   const handleChange = (e) => {
@@ -427,6 +430,37 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
 
   const applyFormat = (command, value = null) => {
     document.execCommand(command, false, value);
+  };
+
+  const handleTemplateGeneration = async () => {
+    if (!templateDescription) {
+      alert('Please provide a description for the template.');
+      return;
+    }
+
+    setLoadingTemplate(true);
+    try {
+      const response = await fetch('/api/ai/compose/emailTemplates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateType: templateDescription, userEmail }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        editorRef.current.innerHTML = data.body; // Populate editor with generated template
+        setHtmlInput(data.body); // Sync HTML input with generated template
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to load template: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Error fetching template:', error);
+      alert('Error generating the template.');
+    } finally {
+      setLoadingTemplate(false);
+      setShowGeneratePopup(false); // Close the popup after generation
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -517,7 +551,6 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
             <button type="button" onClick={() => applyFormat('justifyRight')} title="Align Right" className="p-1 hover:bg-gray-300 rounded"><FaAlignRight /></button>
             <button type="button" onClick={() => applyFormat('formatBlock', 'H2')} title="Heading" className="p-1 hover:bg-gray-300 rounded"><FaHeading /></button>
 
-            {/* Dialog Trigger for HTML Popup */}
             <Dialog>
               <DialogTrigger asChild>
                 <button
@@ -544,6 +577,11 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
                 {/* Main Editor Content */}
               </div>
             </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onClick={() => setShowGeneratePopup(true)}>
+                ✨ Generate Email
+              </ContextMenuItem>
+            </ContextMenuContent>
           </ContextMenu>
 
           {/* Send & Cancel Buttons */}
@@ -565,9 +603,6 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
             <div className="flex justify-between items-center drag-handle cursor-move p-2 bg-gray-100 rounded-t-lg">
               <h2 className="text-lg font-semibold text-gray-700">HTML Editor</h2>
               <DialogClose asChild>
-                <button className="text-gray-500 hover:text-gray-700 transition-all">
-                  <IoMdClose size={20} />
-                </button>
               </DialogClose>
             </div>
             <div className="p-4">
@@ -580,6 +615,34 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
             </div>
           </DialogContent>
         </Draggable>
+      </Dialog>
+
+      {/* Generate Email Template Popup */}
+      <Dialog open={showGeneratePopup} onOpenChange={setShowGeneratePopup}>
+        <DialogContent className="max-w-md w-full rounded-lg shadow-lg bg-white p-6 z-50">
+          <h2 className="text-lg font-semibold mb-4">Generate Email Template</h2>
+          <textarea
+            placeholder="Describe the type of email template you need..."
+            className="w-full p-3 border rounded-lg h-32 resize-none"
+            value={templateDescription}
+            onChange={(e) => setTemplateDescription(e.target.value)}
+          />
+          <div className="flex justify-end mt-4 space-x-2">
+            <button
+              onClick={() => setShowGeneratePopup(false)}
+              className="bg-gray-500 text-white px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleTemplateGeneration}
+              className="bg-green-500 text-white px-4 py-2 rounded"
+              disabled={loadingTemplate}
+            >
+              {loadingTemplate ? 'Generating...' : 'Generate'}
+            </button>
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );

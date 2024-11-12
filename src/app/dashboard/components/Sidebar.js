@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FiMenu, FiInbox } from 'react-icons/fi'; // Icons from react-icons
+import { FiMenu, FiInbox, FiCalendar } from 'react-icons/fi'; // Icons from react-icons
 import { MdLocalOffer, MdPeople, MdWarning, MdStar, MdDrafts, MdSend } from 'react-icons/md'; // More icons from react-icons
 import Link from 'next/link';
 import { useUser } from '@auth0/nextjs-auth0/client'; // Import Auth0 useUser hook
@@ -88,7 +88,7 @@ const Sidebar = () => {
               </li>
               <li className="flex items-center">
                 <Link href="/dashboard/calendar" className="flex items-center space-x-4">
-                  <MdWarning size={24} />
+                  <FiCalendar size={24} />
                   {!isCollapsed && <span className="text-lg">Calendar</span>}
                 </Link>
               </li>
