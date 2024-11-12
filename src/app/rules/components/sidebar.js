@@ -51,7 +51,7 @@ const Sidebar = () => (
     <h1 className="text-2xl font-bold text-center mb-6">INBOXIQ</h1>
     <nav className="flex-grow space-y-2">
       <a href="/ai-assistant" className="block py-2 px-4 hover:bg-gray-700 rounded">✨ AI Personal Assistant</a>
-      <a href="/cold-email-blocker" className="block py-2 px-4 hover:bg-gray-700 rounded">❄️ Cold Email Blocker</a>
+      <a href="/rules/cold-email-blocker" className="block py-2 px-4 hover:bg-gray-700 rounded">❄️ Cold Email Blocker</a>
       <a href="/bulk-unsubscribe" className="block py-2 px-4 hover:bg-gray-700 rounded">📩 Bulk Unsubscribe</a>
       <a href="/analytics" className="block py-2 px-4 hover:bg-gray-700 rounded">📊 Analytics</a>
       <a href="/early-access" className="block py-2 px-4 hover:bg-gray-700 rounded">🚀 Early Access</a>
