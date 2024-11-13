@@ -1530,14 +1530,14 @@ const DashboardPage = () => {
                   <p className="text-gray-600 mt-2 truncate">{email.snippet}</p>
 
                   {email.priority && (
-                    <FaExclamationCircle
-                      className={`absolute top-2 right-2 ${
-                        email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'
-                      }`}
-                      className={`absolute top-2 right-2 ${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'}`}
-                      size={20}
-                    />
-                  )}
+                  <FaExclamationCircle
+                    className={`absolute top-2 right-2 ${
+                      email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'
+                    }`}
+                    size={20}
+                  />
+                )}
+
                 </div>
               ))}
             </div>
