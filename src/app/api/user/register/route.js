@@ -14,7 +14,7 @@ export async function GET(req) {
       await addUserToDatabase(user);
 
       // Redirect to the dashboard after adding the user
-      const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000';
+      const baseUrl = process.env.AUTH0_BASE_URL || 'https://inboxiq-seven.vercel.app';
       return NextResponse.redirect(`${baseUrl}/dashboard`);
     } else {
       return NextResponse.json(
