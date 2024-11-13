@@ -278,7 +278,7 @@ const Labeling = () => {
         {labels.map((item) => (
           <li
             key={item._id}
-            className="flex items-center justify-between p-2 border rounded"
+            className="flex items-center bg-white text-black justify-between p-2 border rounded"
           >
             <span
               style={{ color: item.color }}
