@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FiMenu, FiInbox, FiCalendar } from 'react-icons/fi'; // Icons from react-icons
 import { MdLocalOffer, MdPeople, MdWarning, MdStar, MdDrafts, MdSend } from 'react-icons/md'; // More icons from react-icons
 import Link from 'next/link';
+import { GiScrollQuill } from "react-icons/gi";
 import { useUser } from '@auth0/nextjs-auth0/client'; // Import Auth0 useUser hook
 
 const Sidebar = () => {
@@ -28,9 +29,8 @@ const Sidebar = () => {
     <div className="flex">
       {/* Sidebar Container */}
       <div
-        className={`bg-gradient-to-b from-gray-800 to-gray-900 text-white h-screen p-4 transition-all duration-300 flex flex-col justify-between ${
-          isCollapsed ? 'w-20' : 'w-64'
-        }`}
+        className={`bg-gradient-to-b from-gray-800 to-gray-900 text-white h-screen p-4 transition-all duration-300 flex flex-col justify-between ${isCollapsed ? 'w-20' : 'w-64'
+          }`}
       >
         <div>
           {/* Toggle Button */}
@@ -92,6 +92,12 @@ const Sidebar = () => {
                   {!isCollapsed && <span className="text-lg">Calendar</span>}
                 </Link>
               </li>
+              <li className="flex items-center">
+                <Link href="/rules/" className="flex items-center space-x-4">
+                  <GiScrollQuill size={24} />
+                  {!isCollapsed && <span className="text-lg">Rules</span>}
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>
@@ -101,9 +107,8 @@ const Sidebar = () => {
           <div className="relative">
             {/* User Info */}
             <div
-              className={`flex items-center space-x-4 mt-8 cursor-pointer ${
-                isCollapsed ? 'justify-center' : ''
-              }`}
+              className={`flex items-center space-x-4 mt-8 cursor-pointer ${isCollapsed ? 'justify-center' : ''
+                }`}
               onClick={toggleDropdown} // Toggle dropdown on click
             >
               <img
@@ -119,23 +124,23 @@ const Sidebar = () => {
               )}
             </div>
 
-{/* Dropdown Menu */}
-{isDropdownOpen && (
-  <div className="absolute bottom-full mb-2 w-full bg-white text-gray-700 shadow-lg rounded-lg">
-    <Link
-      href="/settings"
-      className="block w-full text-left px-4 py-2 hover:bg-gray-200"
-    >
-      Settings
-    </Link>
-    <button
-      className="block w-full text-left px-4 py-2 hover:bg-gray-200"
-      onClick={handleLogout}
-    >
-      Logout
-    </button>
-  </div>
-)}
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute bottom-full mb-2 w-full bg-white text-gray-700 shadow-lg rounded-lg">
+                <Link
+                  href="/settings"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                >
+                  Settings
+                </Link>
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
 
           </div>
         )}
