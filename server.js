@@ -15,7 +15,7 @@ app.prepare().then(() => {
 
   server.listen(3000, (err) => {
     if (err) throw err;
-    console.log('> Ready on http://localhost:3000');
+    console.log('> Ready on https://inboxiq-seven.vercel.app');
 
     // Schedule the cron job
     cron.schedule('*/5 * * * *', async () => {
