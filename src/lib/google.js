@@ -2,10 +2,17 @@ import { google } from 'googleapis';
 
 // Function to fetch emails from Gmail
 export const fetchUserEmails = async (userTokens) => {
+  const redirectUri =
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000/api/auth/google/callback' // Development redirect URI
+      : 'https://inboxiq-seven.vercel.app/api/auth/google/callback'; // Production redirect URI
+
   const client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    'https://inboxiq-seven.vercel.app/api/auth/google/callback'
+
+    redirectUri
+
   );
 
   client.setCredentials({

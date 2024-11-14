@@ -58,31 +58,34 @@ const handleSubmit = async (e) => {
   
   
 
-  const handleSmartReply = async () => {
-    setIsLoadingReply(true);
+const handleSmartReply = async () => {
+  setIsLoadingReply(true);
 
-    try {
-      const response = await fetch('/api/ai/compose/smartReply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          emailContent: initialBody,
-        }),
-      });
+  try {
+    const response = await fetch('/api/ai/compose/smartReply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        emailContent: initialBody,
+      }),
+    });
 
-      const data = await response.json();
-      if (response.ok) {
-        setEditorHtml(editorHtml + `\n\n${data.reply}`);
-      } else {
-        alert(`Failed to generate smart reply: ${data.message}`);
-      }
-    } catch (error) {
-      console.error('Error generating smart reply:', error);
-      alert('Error generating smart reply.');
+    const data = await response.json();
+    if (response.ok) {
+      // Include original email content for context below the generated reply
+      const originalThread = `\n\n--- Original Message ---\n${initialBody}`;
+      setEditorHtml(`${editorHtml}\n\n${data.reply}${originalThread}`);
+    } else {
+      alert(`Failed to generate smart reply: ${data.message}`);
     }
+  } catch (error) {
+    console.error('Error generating smart reply:', error);
+    alert('Error generating smart reply.');
+  }
 
-    setIsLoadingReply(false);
-  };
+  setIsLoadingReply(false);
+};
+
 
   if (!isOpen) return null;
 
@@ -139,3 +142,25 @@ const handleSubmit = async (e) => {
 };
 
 export default Reply;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
