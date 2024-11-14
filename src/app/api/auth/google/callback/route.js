@@ -19,7 +19,7 @@ export async function GET(req, res) {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      'https://inboxiq-seven.vercel.app/api/auth/google/callback'
+      'https://localhost:3000/api/auth/google/callback'
     );
 
     const { tokens } = await oauth2Client.getToken(code);

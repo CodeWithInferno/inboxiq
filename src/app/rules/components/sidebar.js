@@ -55,6 +55,7 @@ const Sidebar = () => (
       <a href="/bulk-unsubscribe" className="block py-2 px-4 hover:bg-gray-700 rounded">📩 Bulk Unsubscribe</a>
       <a href="/analytics" className="block py-2 px-4 hover:bg-gray-700 rounded">📊 Analytics</a>
       <a href="/early-access" className="block py-2 px-4 hover:bg-gray-700 rounded">🚀 Early Access</a>
+      <a href="/dashboard/inbox" className="block py-2 px-4 hover:bg-gray-700 rounded">Back To Inbox</a>
     </nav>
     <div className="mt-auto pt-4 border-t border-gray-700">
       <p className="text-sm font-semibold">Pratham Patel</p>

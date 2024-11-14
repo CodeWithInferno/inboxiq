@@ -41,3 +41,11 @@ prathamcomp2618.pub
 prathamcomp2618
 .ssh/config
 .env
+src/app/api/auth/google/route.js
+src/app/api/auth/google/callback/route.js
+src/lib/fetchEmails.js
+src/lib/google.js
+src/lib/google.js
+src/lib/fetchEmails.js
+src/app/api/auth/google/callback/route.js
+src/app/api/auth/google/route.js

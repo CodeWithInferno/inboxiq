@@ -394,14 +394,14 @@
 
 
 
+"use client";
 
 
 
 
 
 
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FaBold, FaItalic, FaUnderline, FaListUl, FaListOl, FaAlignCenter, FaAlignLeft, FaAlignRight, FaHeading, FaHtml5 } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import { ContextMenu, ContextMenuItem, ContextMenuTrigger, ContextMenuContent } from "@/components/ui/context-menu";
@@ -422,11 +422,22 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
     setMessage((prevMessage) => ({ ...prevMessage, [name]: value }));
   };
 
-  const handleHtmlInput = (e) => {
-    const html = e.target.value;
-    setHtmlInput(html);
+// Handle HTML input in the popup and sync it with the main editor
+const handleHtmlInput = (e) => {
+  const html = e.target.value.trim(); // Trim to prevent extra spaces or line breaks
+  setHtmlInput(html);
+  if (editorRef.current) {
     editorRef.current.innerHTML = html; // Sync HTML editor with main content
-  };
+  }
+};
+
+// Update the editor content when `htmlInput` changes
+useEffect(() => {
+  if (editorRef.current) {
+    editorRef.current.innerHTML = htmlInput; // Set innerHTML without extra tags or spaces
+  }
+}, [htmlInput]);
+
 
   const applyFormat = (command, value = null) => {
     document.execCommand(command, false, value);
@@ -573,8 +584,8 @@ const Compose = ({ isOpen, onClose, userEmail }) => {
                 ref={editorRef}
                 className="p-4 border bg-white rounded h-64 overflow-y-auto w-full"
                 style={{ outline: 'none', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}
+                dangerouslySetInnerHTML={{ __html: htmlInput }}
               >
-                {/* Main Editor Content */}
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent>

@@ -91,34 +91,35 @@ export async function POST(req) {
     console.log('Plain Text Email Content:', plainTextContent);
 
     const prompt = `
-      Generate three brief, professional reply suggestions for the following email content. Each reply should be formatted with line breaks after each greeting, main content, and closing:
-
-      Dear [Sender],
-      [Main content]
-      Best regards,
-      [Your Name]
-
-      Email:
-      "${plainTextContent}"
-    `;
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are an email assistant who generates brief, professional reply suggestions with clear line breaks for readability.' },
-        { role: 'user', content: prompt },
-      ],
-    });
-
-    const replySuggestions = response.choices[0].message.content
-      .trim()
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line !== '');
-
-    const formattedReply = replySuggestions.join('\n');
-
-    return NextResponse.json({ reply: formattedReply }, { status: 200 });
+    Generate three brief, professional reply suggestions for the following email content. Each reply should be formatted with double line breaks between sections for readability:
+  
+    Dear [Sender],
+    [Main content]
+    Best regards,
+    [Your Name]
+  
+    Email:
+    "${plainTextContent}"
+  `;
+  
+  const response = await openai.chat.completions.create({
+    model: 'gpt-3.5-turbo',
+    messages: [
+      { role: 'system', content: 'You are an email assistant who generates brief, professional reply suggestions with double line breaks for readability.' },
+      { role: 'user', content: prompt },
+    ],
+  });
+  
+  const replySuggestions = response.choices[0].message.content
+    .trim()
+    .split('\n\n') // Adjust this line to split by double line breaks
+    .map(line => line.trim())
+    .filter(line => line !== '');
+  
+  const formattedReply = replySuggestions.join('\n\n'); // Join each suggestion with a double line break
+  
+  return NextResponse.json({ reply: formattedReply }, { status: 200 });
+  
   } catch (error) {
     console.error('Error generating smart replies:', error);
     return NextResponse.json({ message: 'Internal Server Error', error: error.message }, { status: 500 });
