@@ -15,7 +15,6 @@ export const fetchUserEmails = async (userTokens) => {
 
     );
 
-  );
 
 
   client.setCredentials({

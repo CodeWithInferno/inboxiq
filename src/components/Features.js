@@ -54,7 +54,7 @@ const Features = () => {
                             </span>
                             <div>
                                 <h4 className="font-semibold">Instruct in plain English</h4>
-                                <p className="text-sm">It's as easy as talking to an assistant or sending a prompt to ChatGPT.</p>
+                                <p className="text-sm">Its as easy as talking to an assistant or sending a prompt to ChatGPT.</p>
                             </div>
                         </li>
                     </ul>
