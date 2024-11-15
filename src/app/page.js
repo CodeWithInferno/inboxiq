@@ -37,6 +37,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center h-[60vh] px-4 text-center">
 
+
         {/* Main Headline */}
         <h1 className="font-extrabold font-serif text-5xl md:text-6xl lg:text-7xl leading-tight max-w-2xl">
           Stop wasting half your day in Gmail
@@ -91,6 +92,16 @@ export default function Home() {
 
 
 
+
+
+
+
+
+
+
+    </div>
+  );
+}
 
 
 
