@@ -36,8 +36,6 @@ export default function Home() {
       <Navbar />
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center h-[60vh] px-4 text-center">
-
-
         {/* Main Headline */}
         <h1 className="font-extrabold font-serif text-5xl md:text-6xl lg:text-7xl leading-tight max-w-2xl">
           Stop wasting half your day in Gmail
@@ -52,8 +50,8 @@ export default function Home() {
         <button className="mt-8 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-lg font-semibold">
           Get Started for Free
         </button>
-
       </div>
+
       {/* Video Section */}
       <div className="flex items-center justify-center mt-12">
         <video
@@ -72,40 +70,20 @@ export default function Home() {
           onMouseLeave={() => videoRef.current.pause()}
         />
       </div>
-      <section>
-      <h2 className="mt-48 text-center  font-bold">
-        <p className="leading-tight font-mono  text-xl ">InboxIQ love</p>
-        <span className="mt-2 leading-tight text-4xl">Clean Inbox, Happy Life</span>
-        
-          <div className="w-full text-left mx-auto mt-8 px-4">
-        <TestimonialsGrid />
-        </div>
-        <Features />
 
-      </h2>
+      {/* Testimonials and Features Section */}
+      <section>
+        <h2 className="mt-48 text-center font-bold">
+          <p className="leading-tight font-mono text-xl">InboxIQ love</p>
+          <span className="mt-2 leading-tight text-4xl">Clean Inbox, Happy Life</span>
+        </h2>
+        <div className="w-full text-left mx-auto mt-8 px-4">
+          <TestimonialsGrid />
+        </div>
+        <div className="mt-16">
+          <Features />
+        </div>
       </section>
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-    </div>
-  );
-}
-
-
-
-
-
-
-

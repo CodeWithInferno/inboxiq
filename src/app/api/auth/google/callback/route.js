@@ -29,8 +29,6 @@ export async function GET(req, res) {
 
         );
 
-    );
-
 
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
