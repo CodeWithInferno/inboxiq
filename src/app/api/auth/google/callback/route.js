@@ -164,7 +164,9 @@ export async function GET(req) {
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
       redirectUri
-    );
+
+        );
+
 
     // Exchange authorization code for tokens
     const { tokens } = await oauth2Client.getToken(code);
