@@ -10,8 +10,14 @@ export const fetchUserEmails = async (userTokens) => {
   const client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
+
     redirectUri
+<<<<<<< HEAD
     );
+=======
+
+  );
+>>>>>>> 8cc0078f704340e5c16459387b4d64898f5d3d24
 
   client.setCredentials({
     access_token: userTokens.access_token,
