@@ -11,7 +11,7 @@ export const fetchUserEmails = async (userTokens) => {
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     redirectUri
-  );
+    );
 
   client.setCredentials({
     access_token: userTokens.access_token,
