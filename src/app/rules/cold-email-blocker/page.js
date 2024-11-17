@@ -312,7 +312,7 @@ const RulesPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="ml-64 flex-1 p-6">
+      <div className="ml-64 overflow-auto flex-1 p-6">
         <h1 className="text-2xl font-semibold mb-6">Cold Email Blocker</h1>
 
         {/* Feature Toggle */}
@@ -334,7 +334,7 @@ const RulesPage = () => {
         </div>
 
         {/* Prompt Section */}
-        <div className={`bg-white p-6 w-[70%] rounded-lg shadow-md space-y-4 ${!isFeatureEnabled ? 'opacity-50' : ''}`}>
+        <div className={`bg-white p-6 w-[100%] rounded-lg shadow-md space-y-4 ${!isFeatureEnabled ? 'opacity-50' : ''}`}>
           <h2 className="text-xl font-semibold">Enter Your Preferences</h2>
           <p className="text-gray-600">
             Write a prompt for your AI Cold Email Blocker to follow. This will help personalize email blocking based on your preferences.

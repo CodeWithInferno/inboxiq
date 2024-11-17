@@ -61,27 +61,37 @@ const handleSubmit = async (e) => {
 const handleSmartReply = async () => {
   setIsLoadingReply(true);
 
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
   try {
-    const response = await fetch('/api/ai/compose/smartReply', {
+    const response = await fetch('/api/messages/sendReply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        emailContent: initialBody,
+        to,
+        subject: message.subject,
+        body: editorHtml, // Keep editorHtml as the HTML content
+        userEmail,
+        threadId: selectedMessage.threadId, // Ensure threadId is passed
+        messageId: selectedMessage.id,      // Ensure messageId is passed
+        isHtml: true, // Add this field to indicate HTML content if your API supports it
       }),
     });
 
-    const data = await response.json();
     if (response.ok) {
-      // Include original email content for context below the generated reply
-      const originalThread = `\n\n--- Original Message ---\n${initialBody}`;
-      setEditorHtml(`${editorHtml}\n\n${data.reply}${originalThread}`);
+      alert('Reply sent successfully!');
+      onClose();
     } else {
-      alert(`Failed to generate smart reply: ${data.message}`);
+      const result = await response.json();
+      alert(`Failed to send reply: ${result.message}`);
     }
   } catch (error) {
-    console.error('Error generating smart reply:', error);
-    alert('Error generating smart reply.');
+    console.error('Error sending reply:', error);
+    alert('Error sending reply.');
   }
+};
+
 
   setIsLoadingReply(false);
 };
