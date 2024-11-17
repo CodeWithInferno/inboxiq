@@ -335,7 +335,7 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
           endTime: event.endTime,
         }),
       });
-  
+
       if (response.ok) {
         alert('Event added to calendar successfully.');
       } else {
@@ -346,7 +346,7 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
       console.error('Error adding event to calendar:', error);
     }
   };
-  
+
 
   const handleSummarizeEmail = async () => {
     setIsLoadingSummary(true);
@@ -493,12 +493,25 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
       </div>
 
       {/* Summary section */}
-      {summary && (
-        <div className="mt-4 p-4 bg-blue-50 rounded">
-          <h3 className="font-semibold mb-2">Email Summary:</h3>
-          <p>{summary}</p>
-        </div>
-      )}
+        {(isLoadingSummary || summary) && (
+          <div className="mt-4 p-4 bg-blue-50 rounded">
+            <h3 className="font-semibold mb-2">Email Summary:</h3>
+            {isLoadingSummary ? (
+              <div className="shadow rounded-md p-4 w-full mx-auto">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-2 bg-slate-700 rounded"></div>
+                  <div className="h-2 bg-slate-700 rounded"></div>
+                  <div className="h-2 bg-slate-700 rounded"></div>
+                </div>
+              </div>
+            ) : (
+              <p>{summary}</p>
+            )}
+          </div>
+        )}
+
+
+
 
       {/* Sentiment section */}
       {sentiment && (

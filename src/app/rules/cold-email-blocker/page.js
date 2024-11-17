@@ -184,8 +184,6 @@
 
 
 
-
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -312,7 +310,7 @@ const RulesPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="ml-64 flex-1 p-6">
+      <div className="ml-64 overflow-auto flex-1 p-6">
         <h1 className="text-2xl font-semibold mb-6">Cold Email Blocker</h1>
 
         {/* Feature Toggle */}
