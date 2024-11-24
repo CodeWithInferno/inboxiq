@@ -270,7 +270,7 @@ const RulesPage = () => {
   }, []);
 
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <div className="p-4 bg-white shadow-md border-b">
