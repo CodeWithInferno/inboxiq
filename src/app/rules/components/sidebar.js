@@ -54,21 +54,21 @@ const Sidebar = () => {
           {!isCollapsed && 'Cold Email Blocker'}
         </Link>
         <Link
-          href="/bulk-unsubscribe"
+          href="/rules/bulk-unsubscribe"
           className="flex items-center py-2 px-3 rounded-md hover:bg-gray-800 transition"
         >
           <FaEnvelope className="mr-3" />
           {!isCollapsed && 'Bulk Unsubscribe'}
         </Link>
         <Link
-          href="/analytics"
+          href="/rules/analytics"
           className="flex items-center py-2 px-3 rounded-md hover:bg-gray-800 transition"
         >
           <FaChartBar className="mr-3" />
           {!isCollapsed && 'Analytics'}
         </Link>
         <Link
-          href="/early-access"
+          href="/rules/early-access"
           className="flex items-center py-2 px-3 rounded-md hover:bg-gray-800 transition"
         >
           <FaRocket className="mr-3" />

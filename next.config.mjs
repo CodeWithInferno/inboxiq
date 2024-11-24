@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images: {
-        domains: ['source.unsplash.com'], // Ensure this matches exactly
+        domains: ['source.unsplash.com', 'lh3.googleusercontent.com'], // Add 'lh3.googleusercontent.com'
     },
 };
 

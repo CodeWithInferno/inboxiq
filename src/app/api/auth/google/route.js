@@ -73,37 +73,24 @@ export async function GET(req) {
       redirectUri
     );
 
-    // const authUrl = oauth2Client.generateAuthUrl({
-    //   access_type: 'offline',
-    //   scope: [
-    //     'https://www.googleapis.com/auth/gmail.readonly',
-    //     'https://www.googleapis.com/auth/userinfo.profile',
-    //     'https://www.googleapis.com/auth/userinfo.email',
-    //     'https://www.googleapis.com/auth/gmail.modify',
-    //     'https://www.googleapis.com/auth/gmail.compose',
-    //     'https://www.googleapis.com/auth/gmail.send',
-    //     'https://www.googleapis.com/auth/gmail.labels',
-    //     'https://mail.google.com/'
-    //   ],
-    //   prompt: 'consent',
-    // });
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/gmail.compose',
+        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/gmail.labels',
+        'https://mail.google.com/'
+      ],
+      prompt: 'consent',
+    });
     
 
 
 
-    const authUrl = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: [
-        'https://www.googleapis.com/auth/gmail.readonly',  // Read access
-        'https://www.googleapis.com/auth/gmail.modify',   // Modify emails/labels
-        'https://www.googleapis.com/auth/gmail.compose',  // Draft emails
-        'https://www.googleapis.com/auth/gmail.send',     // Send emails
-        'https://www.googleapis.com/auth/gmail.labels',   // Manage labels
-        'https://www.googleapis.com/auth/userinfo.email', // Access user's email address
-        'https://www.googleapis.com/auth/userinfo.profile' // Access user's profile
-      ],
-      prompt: 'consent',
-    });
     
     return new Response(null, {
       status: 302,
