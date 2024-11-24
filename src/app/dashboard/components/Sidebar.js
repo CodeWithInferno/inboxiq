@@ -1,9 +1,11 @@
+'use client';
 import { useState } from 'react';
 import { FiMenu, FiInbox, FiCalendar } from 'react-icons/fi'; // Icons from react-icons
 import { MdLocalOffer, MdPeople, MdWarning, MdStar, MdDrafts, MdSend } from 'react-icons/md'; // More icons from react-icons
 import Link from 'next/link';
 import { GiScrollQuill } from "react-icons/gi";
 import { useUser } from '@auth0/nextjs-auth0/client'; // Import Auth0 useUser hook
+import Image from 'next/image'; // Import Image for optimized image handling
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false); // Manage the collapsed state
@@ -12,12 +14,21 @@ const Sidebar = () => {
 
   // Toggle the collapsed state
   const toggleSidebar = () => {
+    // If collapsing the sidebar, close the dropdown
+    if (!isCollapsed && isDropdownOpen) {
+      setIsDropdownOpen(false);
+    }
     setIsCollapsed(!isCollapsed);
   };
 
   // Toggle the dropdown menu
   const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+    // If the sidebar is collapsed, expand it
+    if (isCollapsed) {
+      setIsCollapsed(false);
+    } else {
+      setIsDropdownOpen(!isDropdownOpen); // Toggle the dropdown
+    }
   };
 
   // Handle logout using window.location.href
@@ -111,10 +122,12 @@ const Sidebar = () => {
                 }`}
               onClick={toggleDropdown} // Toggle dropdown on click
             >
-              <img
+              <Image
                 src={user.picture} // User image from Auth0
                 alt="User Profile"
-                className="w-10 h-10 rounded-full"
+                width={40}
+                height={40}
+                className="rounded-full"
               />
               {!isCollapsed && (
                 <div>

@@ -106,9 +106,100 @@
 
 
 
+// import OpenAI from 'openai';
+// import { getSession } from '@auth0/nextjs-auth0'; // If using Auth0
+// import { getUserFeatureState } from '@/lib/getUserFeatureState';
+
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY,
+// });
+
+// // Helper function to strip HTML tags using regex
+// function stripHTML(html) {
+//   return html.replace(/<[^>]*>?/gm, '');
+// }
+
+// export async function POST(req) {
+//   try {
+//     const body = await req.json();
+//     console.log('Received request body:', body);
+
+//     let { emailBody, userId } = body;
+
+//     if (!userId) {
+//       const session = await getSession(req);
+//       userId = session?.user?.sub;
+//       console.log("Retrieved userId from session:", userId);
+//     }
+
+//     if (!emailBody || !userId) {
+//       console.error('Missing emailBody or userId:', { emailBody, userId });
+//       return new Response(null, { status: 204 }); // No content response
+//     }
+
+//     const isFeatureEnabled = await getUserFeatureState(userId, 'sentimentAnalysis');
+//     console.log(`Feature enabled for user ${userId}:`, isFeatureEnabled);
+
+//     if (!isFeatureEnabled) {
+//       return new Response(null, { status: 403 });
+//     }
+
+//     const cleanedEmailBody = stripHTML(emailBody);
+//     const truncatedEmail = cleanedEmailBody.split(" ").slice(0, 1000).join(" ");
+//     console.log('Truncated Email:', truncatedEmail);
+
+//     const prompt = `
+//       Analyze the sentiment of the following email and classify it as Positive, Neutral, or Negative:
+//       Email Body:
+//       "${truncatedEmail}"
+//     `;
+
+//     const response = await openai.chat.completions.create({
+//       model: 'gpt-3.5-turbo',
+//       messages: [
+//         { role: 'system', content: 'You are a sentiment analysis assistant.' },
+//         { role: 'user', content: prompt },
+//       ],
+//     });
+
+//     const sentiment = response.choices[0]?.message?.content.trim() || 'No response';
+//     console.log('Sentiment:', sentiment);
+
+//     // Return a response without additional message content
+//     return new Response(JSON.stringify({ sentiment }), { status: 200 });
+//   } catch (error) {
+//     console.error('Error analyzing sentiment:', error);
+//     return new Response(null, { status: 500 });
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import OpenAI from 'openai';
 import { getSession } from '@auth0/nextjs-auth0'; // If using Auth0
 import { getUserFeatureState } from '@/lib/getUserFeatureState';
+import { sanitizeHtmlEmail } from '@/utils/sensitiveInfo'; // Importing the sanitization utility
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -126,10 +217,11 @@ export async function POST(req) {
 
     let { emailBody, userId } = body;
 
+    // Retrieve user ID from session if not provided
     if (!userId) {
       const session = await getSession(req);
       userId = session?.user?.sub;
-      console.log("Retrieved userId from session:", userId);
+      console.log('Retrieved userId from session:', userId);
     }
 
     if (!emailBody || !userId) {
@@ -137,17 +229,23 @@ export async function POST(req) {
       return new Response(null, { status: 204 }); // No content response
     }
 
+    // Check if the feature is enabled for the user
     const isFeatureEnabled = await getUserFeatureState(userId, 'sentimentAnalysis');
     console.log(`Feature enabled for user ${userId}:`, isFeatureEnabled);
 
     if (!isFeatureEnabled) {
-      return new Response(null, { status: 403 });
+      return new Response(null, { status: 403 }); // Forbidden
     }
 
-    const cleanedEmailBody = stripHTML(emailBody);
-    const truncatedEmail = cleanedEmailBody.split(" ").slice(0, 1000).join(" ");
+    // Sanitize and process the email body
+    const sanitizedEmailBody = sanitizeHtmlEmail(emailBody); // Sanitizing sensitive info
+    console.log('Sanitized Email Body:', sanitizedEmailBody);
+
+    const cleanedEmailBody = stripHTML(sanitizedEmailBody); // Strip remaining HTML tags
+    const truncatedEmail = cleanedEmailBody.split(' ').slice(0, 1000).join(' '); // Limit to 1000 words
     console.log('Truncated Email:', truncatedEmail);
 
+    // Prompt for OpenAI
     const prompt = `
       Analyze the sentiment of the following email and classify it as Positive, Neutral, or Negative:
       Email Body:
@@ -165,7 +263,7 @@ export async function POST(req) {
     const sentiment = response.choices[0]?.message?.content.trim() || 'No response';
     console.log('Sentiment:', sentiment);
 
-    // Return a response without additional message content
+    // Return a JSON response with the sentiment result
     return new Response(JSON.stringify({ sentiment }), { status: 200 });
   } catch (error) {
     console.error('Error analyzing sentiment:', error);

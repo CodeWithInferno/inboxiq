@@ -69,12 +69,12 @@
 
 
 
-
 'use client';
 import { useState } from 'react';
 import { useUser } from '@auth0/nextjs-auth0/client';
 import ThemeToggle from './togglebutton';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -115,18 +115,43 @@ const Navbar = () => {
           {user ? (
             <div className="relative">
               <button onClick={toggleMenu} className="flex items-center">
-                <img src={user.picture} alt={user.name} width={32} height={32} className="rounded-full" />
+                <Image
+                  src={user.picture}
+                  alt={user.name}
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                  priority={true} // Helps with LCP optimization
+                />
               </button>
               {isMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-lg">
-                  <Link href="/dashboard" className="block px-4 py-2 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900">Dashboard</Link>
-                  <Link href="/settings" className="block px-4 py-2 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900">Settings</Link>
-                  <Link href="/api/auth/logout" className="block px-4 py-2 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900">Logout</Link>
+                  <Link
+                    href="/dashboard"
+                    className="block px-4 py-2 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="block px-4 py-2 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900"
+                  >
+                    Settings
+                  </Link>
+                  <Link
+                    href="/api/auth/logout"
+                    className="block px-4 py-2 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900"
+                  >
+                    Logout
+                  </Link>
                 </div>
               )}
             </div>
           ) : (
-            <Link href="/api/auth/login" className="text-gray-700 dark:text-gray-100 hover:text-blue-500 dark:hover:text-blue-400">
+            <Link
+              href="/api/auth/login"
+              className="text-gray-700 dark:text-gray-100 hover:text-blue-500 dark:hover:text-blue-400"
+            >
               Login
             </Link>
           )}

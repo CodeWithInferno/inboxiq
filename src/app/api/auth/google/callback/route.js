@@ -228,6 +228,8 @@ export async function GET(req) {
               'https://www.googleapis.com/auth/gmail.readonly',
               'https://www.googleapis.com/auth/gmail.modify',
               'https://www.googleapis.com/auth/userinfo.email',
+              'https://mail.google.com/', // Full access to Gmail
+
             ],
             locale: userInfo.locale || 'en', // Default to 'en' if locale is not provided
             features: {

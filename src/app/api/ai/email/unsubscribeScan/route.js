@@ -214,7 +214,6 @@
 
 
 
-
 import { google } from 'googleapis';
 import OpenAI from 'openai';
 import { getSession } from '@auth0/nextjs-auth0';
@@ -313,12 +312,15 @@ export async function POST(req) {
           ? Buffer.from(message.data.payload.parts[0].body.data, 'base64').toString('utf-8')
           : 'No Content';
 
+      // Sanitize the email body
+      const sanitizedBody = sanitizeEmailContent(body);
+
       return {
         emailId: email.id, // Save this for future unsubscribe actions
         subject,
         senderName,
         senderEmail,
-        body: sanitizeEmailContent(body),
+        body: sanitizedBody,
       };
     };
 

@@ -8,6 +8,8 @@ import MessageDetails from '../components/MessageDetails';
 import Compose from '../components/Compose';
 import { FaExclamationCircle, FaSearch } from 'react-icons/fa';
 import { debounce } from 'lodash';
+import Image from 'next/image';
+
 
 const DashboardPage = () => {
   const router = useRouter();
