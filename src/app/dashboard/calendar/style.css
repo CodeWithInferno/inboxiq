@@ -1,0 +1,27 @@
+.custom-event {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .event-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #2563eb; /* Tailwind blue-600 */
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  
+  .event-title {
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .event-time {
+    color: #6b7280; /* Gray-500 Tailwind color */
+    font-size: 0.8rem;
+  }
+  
