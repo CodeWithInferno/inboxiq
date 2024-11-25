@@ -6,8 +6,7 @@ const RulesPage = () => {
     <div className="flex">
       <Sidebar />
       <div className="flex-1 p-6">
-        <h1 className="text-2xl font-semibold">Rules & Features</h1>
-        {/* Your main content goes here */}
+      <h1 className='text-left text-black font-bold text-3xl'>Analytics</h1>
       </div>
     </div>
   );

@@ -80,7 +80,7 @@
 //       <div className="fixed top-0 left-0 h-full w-64 bg-gray-900 text-white">
 //         <Sidebar />
 //       </div>
-      
+
 //       {/* Main Content */}
 //       <div className="ml-64 flex-1 p-6">
 //         <h1 className="text-2xl font-semibold mb-6">Cold Email Blocker</h1>
@@ -180,10 +180,6 @@
 
 
 
-
-
-
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -193,7 +189,7 @@ import MailList from './components/MailList';
 
 const RulesPage = () => {
   const [promptText, setPromptText] = useState('');
-  const [action, setAction] = useState('archive'); // New state for action
+  const [action, setAction] = useState('archive'); // Default action is 'archive'
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isFeatureEnabled, setIsFeatureEnabled] = useState(false);
@@ -204,9 +200,11 @@ const RulesPage = () => {
       try {
         const response = await fetch('/api/Rules/ColdEmail/GetPrompt');
         const data = await response.json();
+
+        // Set the state with data fetched from the API
         setPromptText(data.prompt || '');
         setIsFeatureEnabled(data.isEnabled || false);
-        setAction(data.action || 'archive'); // Set initial action from database
+        setAction(data.action || 'archive'); // Use action from database or fallback to 'archive'
       } catch (error) {
         console.error('Error fetching initial data:', error);
       }
@@ -222,6 +220,7 @@ const RulesPage = () => {
       }
     };
 
+    // Fetch data on initial render
     fetchPromptData();
     fetchBlockedEmails();
   }, []);
@@ -284,18 +283,19 @@ const RulesPage = () => {
       const response = await fetch('/api/Rules/ColdEmail/ProcessEmails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emails: selectedEmails, action }), // Pass selected emails and action
+        body: JSON.stringify({ emails: selectedEmails, action }), // Use the current action from state
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        setBlockedEmails((prev) =>
+          prev.filter((email) => !selectedEmails.includes(email.messageId))
+        );
+        setMessage(data.message || 'Emails processed successfully!');
+      } else {
         const errorData = await response.json();
         setMessage(`Failed to process emails: ${errorData.message}`);
-        return;
       }
-
-      const data = await response.json();
-      setBlockedEmails((prev) => prev.filter((email) => !selectedEmails.includes(email.messageId)));
-      setMessage(data.message || 'Emails processed successfully!');
     } catch (error) {
       console.error('Error processing emails:', error);
       setMessage('An error occurred while processing emails.');
@@ -319,20 +319,18 @@ const RulesPage = () => {
           <Switch
             checked={isFeatureEnabled}
             onChange={handleToggle}
-            className={`${
-              isFeatureEnabled ? 'bg-green-500' : 'bg-gray-300'
-            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
+            className={`${isFeatureEnabled ? 'bg-green-500' : 'bg-gray-300'
+              } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
           >
             <span
-              className={`${
-                isFeatureEnabled ? 'translate-x-6' : 'translate-x-1'
-              } inline-block h-4 w-4 transform bg-white rounded-full transition-transform`}
+              className={`${isFeatureEnabled ? 'translate-x-6' : 'translate-x-1'
+                } inline-block h-4 w-4 transform bg-white rounded-full transition-transform`}
             />
           </Switch>
         </div>
 
         {/* Prompt Section */}
-        <div className={`bg-white p-6 w-[70%] rounded-lg shadow-md space-y-4 ${!isFeatureEnabled ? 'opacity-50' : ''}`}>
+        <div className={`bg-white p-6 w-[95%] rounded-lg shadow-md space-y-4 ${!isFeatureEnabled ? 'opacity-50' : ''}`}>
           <h2 className="text-xl font-semibold">Enter Your Preferences</h2>
           <p className="text-gray-600">
             Write a prompt for your AI Cold Email Blocker to follow. This will help personalize email blocking based on your preferences.
@@ -343,7 +341,7 @@ const RulesPage = () => {
             <label className="block text-gray-700 font-semibold mb-2">Action</label>
             <select
               className="w-full p-3 border border-gray-300 bg-white rounded-lg focus:outline-none focus:border-blue-500"
-              value={action}
+              value={action} // Ensure the value is tied to the state
               onChange={(e) => setAction(e.target.value)}
               disabled={!isFeatureEnabled}
             >

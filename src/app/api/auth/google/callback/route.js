@@ -225,11 +225,10 @@ export async function GET(req) {
             refresh_token: encryptedRefreshToken, // Store encrypted refresh token
             expires_in: expiresIn, // Token expiration time
             scopes: [
-              'https://www.googleapis.com/auth/gmail.readonly',
-              'https://www.googleapis.com/auth/gmail.modify',
-              'https://www.googleapis.com/auth/userinfo.email',
+              'https://www.googleapis.com/auth/userinfo.profile',
               'https://mail.google.com/', // Full access to Gmail
-
+              'https://www.googleapis.com/auth/calendar.readonly',
+              'https://www.googleapis.com/auth/calendar.events',
             ],
             locale: userInfo.locale || 'en', // Default to 'en' if locale is not provided
             features: {
