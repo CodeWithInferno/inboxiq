@@ -9,6 +9,7 @@ import { DateTime } from "luxon";
 import Sidebar from "../components/Sidebar";
 import AddCal from "./Components/AddCal";
 
+
 const Calendar = () => {
   const [events, setEvents] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -315,3 +316,28 @@ const Calendar = () => {
 };
 
 export default Calendar;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
