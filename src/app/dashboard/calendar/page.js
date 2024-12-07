@@ -7,12 +7,14 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { DateTime } from "luxon";
 import Sidebar from "../components/Sidebar";
+import AddCal from "./Components/AddCal";
 
 const Calendar = () => {
   const [events, setEvents] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEventDetailModalOpen, setIsEventDetailModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isAddCalModalOpen, setIsAddCalModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     date: "",
@@ -61,6 +63,7 @@ const Calendar = () => {
       console.error("Error fetching events:", error);
     }
   };
+
 
   useEffect(() => {
     fetchEvents();
@@ -124,6 +127,15 @@ const Calendar = () => {
     setIsEventDetailModalOpen(false);
     setSelectedEvent(null);
   };
+  const handleAddCalEvents = (newEvents) => {
+    setEvents((prev) => [...prev, ...newEvents]);
+  };
+
+
+
+  const handleOpenAddCalModal = () => setIsAddCalModalOpen(true);
+  const handleCloseAddCalModal = () => setIsAddCalModalOpen(false);
+
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -236,6 +248,20 @@ const Calendar = () => {
                 >
                   Add Event
                 </button>
+                <button
+                  onClick={handleOpenAddCalModal}
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition"
+                >
+                  Add Calendar
+                </button>
+                {isAddCalModalOpen && (
+                  <AddCal
+                    onAddEvents={handleAddCalEvents}
+                    onClose={handleCloseAddCalModal}
+                  />
+                )}
+
+
               </div>
             </form>
           </div>
@@ -289,28 +315,3 @@ const Calendar = () => {
 };
 
 export default Calendar;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

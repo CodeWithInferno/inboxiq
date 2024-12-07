@@ -7,8 +7,8 @@ import Sidebar from '../components/Sidebar';
 import MessageDetails from '../components/MessageDetails';
 import Compose from '../components/Compose';
 import { FaExclamationCircle, FaSearch } from 'react-icons/fa';
-import { debounce } from 'lodash';
-import Image from 'next/image';
+import Search from '../components/search';
+
 
 
 const DashboardPage = () => {
@@ -18,12 +18,10 @@ const DashboardPage = () => {
   const [emails, setEmails] = useState([]);
   const [labelCounts, setLabelCounts] = useState({});
   const [nextPageToken, setNextPageToken] = useState(null);
+  const [threadMessages, setThreadMessages] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [threadMessages, setThreadMessages] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [searchMode, setSearchMode] = useState(false);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [isClassifying, setIsClassifying] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
@@ -57,53 +55,49 @@ const DashboardPage = () => {
     }
   };
 
-
-  const fetchEmails = async (label, email, pageToken = null, query = '') => {
-    setLoading(true);
+  const fetchEmails = async (label, email, query = '', pageToken = null) => {
     try {
-      const url = `/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(email)}${
-        pageToken ? `&pageToken=${pageToken}` : ''
-      }${query ? `&query=${encodeURIComponent(query)}` : ''}`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Unknown error occurred while fetching emails');
-      }
+      const url = `/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(email)}${query ? `&query=${encodeURIComponent(query)}` : ''
+        }${pageToken ? `&pageToken=${pageToken}` : ''}`;
 
+      console.log('Fetching emails with URL:', url); // Debugging
+      const response = await fetch(url);
       const data = await response.json();
-      const classifiedEmails = await classifyEmails(data.messages);
-      setEmails((prevEmails) => [...prevEmails, ...classifiedEmails]);
-      setNextPageToken(data.nextPageToken || null);
-      setLabelCounts(data.labelCounts || {});
+      setEmails(data.messages || []);
     } catch (error) {
       console.error('Error fetching emails:', error.message);
     }
-    setLoading(false);
   };
+
+
+
+
+
+
 
   const classifyEmails = async (emails) => {
     const classifiedEmails = [];
-  
+
     for (const email of emails) {
       try {
         const emailContent = {
           subject: truncateContent(email.subject || '', 800), // Limit each part to prevent overflow
           body: truncateContent(email.snippet || '', 800),
         };
-  
+
         // Log the email content for inspection
         console.log('Sending email for classification:', emailContent);
-  
+
         const response = await fetch('/api/ai/email/classifyEmail', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: emailContent }),
         });
-  
+
         if (!response.ok) {
           throw new Error('Classification failed');
         }
-  
+
         const { priority } = await response.json();
         classifiedEmails.push({ ...email, priority });
       } catch (error) {
@@ -116,17 +110,17 @@ const DashboardPage = () => {
         }
       }
     }
-  
+
     return classifiedEmails;
   };
-  
-  
+
+
   // Utility function to truncate text to avoid token limit issues
   const truncateContent = (text, limit) => {
     return text.length > limit ? text.slice(0, limit - 1) + '…' : text;
   };
-  
-    
+
+
 
 
   // Email labeling function reintroduced from the backup code
@@ -232,47 +226,7 @@ const DashboardPage = () => {
     setThreadMessages([]);
   };
 
-  const fetchSuggestions = debounce(async (query) => {
-    if (query.trim() === '') {
-      setSuggestions([]);
-      return;
-    }
 
-    try {
-      const response = await fetch(
-        `/api/auth/google/searchSuggestions?query=${encodeURIComponent(query)}&email=${encodeURIComponent(
-          user.email
-        )}`
-      );
-      if (!response.ok) {
-        throw new Error('Error fetching search suggestions');
-      }
-      const data = await response.json();
-      setSuggestions(data.suggestions || []);
-    } catch (error) {
-      console.error('Error fetching suggestions:', error.message);
-    }
-  }, 300);
-
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    fetchSuggestions(query);
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setEmails([]);
-    setSearchMode(true);
-    const label = getGmailLabel(slug);
-    fetchEmails(label, user.email, null, searchQuery);
-  };
-
-  const handleSuggestionClick = (suggestion) => {
-    setSearchQuery(suggestion);
-    setSuggestions([]);
-    handleSearchSubmit(new Event('submit'));
-  };
 
   const handleBackToInbox = () => {
     setSearchMode(false);
@@ -298,11 +252,11 @@ const DashboardPage = () => {
   };
 
   useEffect(() => {
-    if (user && slug && !searchMode) {
+    if (user && slug) {
       const label = getGmailLabel(slug);
       fetchEmails(label, user.email);
     }
-  }, [slug, user, searchMode]);
+  }, [slug, user]);
 
   if (isLoading || !user) {
     return (
@@ -311,6 +265,27 @@ const DashboardPage = () => {
       </div>
     );
   }
+  const handleSearchSubmit = async (query) => {
+    setEmails([]); // Clear existing emails
+    setLoading(true); // Show loading state
+    const label = getGmailLabel(slug); // Use the appropriate label
+    try {
+      // Make API call to fetch emails based on the query
+      const url = `/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(user?.email)}&query=${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Error fetching emails');
+      const data = await response.json();
+      setEmails(data.messages || []); // Update email list
+    } catch (error) {
+      console.error('Error fetching emails:', error.message);
+    } finally {
+      setLoading(false); // Hide loading state
+    }
+  };
+
+
+
+
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -320,40 +295,19 @@ const DashboardPage = () => {
 
         {!selectedMessage && (
           <>
-            <form className="mb-4 relative" onSubmit={handleSearchSubmit}>
-              <input
-                type="text"
-                className="w-full p-3 pr-10 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:border-blue-500 transition"
-                placeholder="Search emails..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-              />
-              <button
-                type="submit"
-                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
-              >
-                <FaSearch size={25} />
-              </button>
-              {suggestions.length > 0 && (
-                <ul className="border border-gray-300 rounded-lg bg-white mt-2 max-h-40 overflow-y-auto">
-                  {suggestions.map((suggestion, index) => (
-                    <li
-                      key={index}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => handleSuggestionClick(suggestion)}
-                    >
-                      {suggestion}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </form>
+            {/* Add the Search Component */}
+            <Search
+              userEmail={user?.email}
+              onSearchSubmit={(query) => {
+                console.log('Search query submitted:', query); // Debug search query
+                const label = getGmailLabel(slug); // Dynamically determine the label
+                fetchEmails(label, user?.email, query); // Pass the query
+              }}
+            />
 
-            {searchMode && (
-              <button className="text-blue-500 hover:text-blue-700 mb-4" onClick={handleBackToInbox}>
-                &larr; Back to Inbox
-              </button>
-            )}
+
+
+
 
             <div className="flex mb-5 space-x-4">
               <button
@@ -365,24 +319,23 @@ const DashboardPage = () => {
               <button
                 onClick={handleLabelEmails}
                 disabled={isClassifying}
-                className={`px-5 py-3 rounded-lg shadow ${
-                  isClassifying ? 'bg-gray-400' : 'bg-transparent text-black border'
-                } transition`}
+                className={`px-5 py-3 rounded-lg shadow ${isClassifying ? 'bg-gray-400' : 'bg-transparent text-black border'
+                  } transition`}
               >
                 {isClassifying ? 'Labeling...' : 'Label Emails'}
               </button>
               <button
                 onClick={handleBlockColdEmails}
                 disabled={isBlocking}
-                className={`px-5 py-3 rounded-lg shadow ${
-                  isBlocking ? 'bg-gray-400' : 'bg-transparent text-black border'
-                } transition`}
+                className={`px-5 py-3 rounded-lg shadow ${isBlocking ? 'bg-gray-400' : 'bg-transparent text-black border'
+                  } transition`}
               >
                 {isBlocking ? 'Blocking...' : 'Block Cold Emails'}
               </button>
             </div>
           </>
         )}
+
 
         {loading && emails.length === 0 ? (
           <p className="text-gray-600">Loading emails...</p>
@@ -403,11 +356,10 @@ const DashboardPage = () => {
               {emails.map((email) => (
                 <div
                   key={email.id}
-                  className={`relative p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer ${
-                    email.isRead
-                      ? 'bg-gray-300 text-gray-900'
-                      : 'bg-white text-gray-900'
-                  } ${email.category === 'Spam' ? 'border border-red-500' : ''}`}
+                  className={`relative p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer ${email.isRead
+                    ? 'bg-gray-300 text-gray-900'
+                    : 'bg-white text-gray-900'
+                    } ${email.category === 'Spam' ? 'border border-red-500' : ''}`}
                   onClick={() => handleOpenMessage(email)}
                 >
                   <h2 className="font-bold text-xl mb-2">{email.subject || '(No Subject)'}</h2>
@@ -415,13 +367,12 @@ const DashboardPage = () => {
                   <p className="text-gray-600 mt-2 truncate">{email.snippet}</p>
 
                   {email.priority && (
-                  <FaExclamationCircle
-                    className={`absolute top-2 right-2 ${
-                      email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'
-                    }`}
-                    size={20}
-                  />
-                )}
+                    <FaExclamationCircle
+                      className={`absolute top-2 right-2 ${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'
+                        }`}
+                      size={20}
+                    />
+                  )}
 
                 </div>
               ))}

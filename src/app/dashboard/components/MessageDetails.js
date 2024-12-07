@@ -358,18 +358,30 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
           emailBody: selectedMessage.body,
         }),
       });
-
-      const data = await response.json();
-      if (response.ok) {
-        setSummary(data.summary);
-      } else {
-        alert(`Failed to summarize email: ${data.message}`);
+  
+      if (response.status === 403) {
+        console.warn('Summarize email feature is disabled for this user.');
+        setSummary('Feature not enabled. Please enable the summarization feature to use it.'); // Show a subtle UI message
+        return;
       }
+  
+      if (!response.ok) {
+        const data = await response.json();
+        console.error(`Failed to summarize email: ${data.message}`);
+        setSummary('Error summarizing email.'); // Provide generic feedback
+        return;
+      }
+  
+      const data = await response.json();
+      setSummary(data.summary);
     } catch (error) {
       console.error('Error summarizing email:', error);
+      setSummary('Error summarizing email.'); // Handle unexpected errors
+    } finally {
+      setIsLoadingSummary(false);
     }
-    setIsLoadingSummary(false);
   };
+  
 
   const handleDeleteEmail = async () => {
     if (window.confirm('Are you sure you want to delete this email?')) {
@@ -405,19 +417,30 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
           emailBody: selectedMessage.body,
         }),
       });
-
-      const data = await response.json();
-      if (response.ok) {
-        setSentiment(data.sentiment);
-      } else {
-        alert(`Failed to analyze sentiment: ${data.message}`);
+  
+      if (response.status === 403) {
+        console.warn('Sentiment analysis feature is disabled for this user.');
+        setSentiment('Feature not enabled'); // You can display a subtle message in the UI
+        return;
       }
+  
+      if (!response.ok) {
+        const data = await response.json();
+        console.error(`Failed to analyze sentiment: ${data.message}`);
+        setSentiment('Error analyzing sentiment');
+        return;
+      }
+  
+      const data = await response.json();
+      setSentiment(data.sentiment);
     } catch (error) {
       console.error('Error analyzing sentiment:', error);
-      alert('Error analyzing sentiment.');
+      setSentiment('Error analyzing sentiment');
+    } finally {
+      setIsLoadingSentiment(false);
     }
-    setIsLoadingSentiment(false);
   };
+  
 
   const handleGenerateSmartReply = async () => {
     setIsGeneratingReply(true);
@@ -429,20 +452,31 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
           emailContent: selectedMessage.body,
         }),
       });
-
-      const data = await response.json();
-      if (response.ok) {
-        setGeneratedReply(data.reply);
-        setIsReplyOpen(true);
-      } else {
-        alert(`Failed to generate reply: ${data.message}`);
+  
+      if (response.status === 403) {
+        console.warn('Smart reply feature is disabled for this user.');
+        setGeneratedReply('Feature not enabled. Please enable the smart reply feature to use it.');
+        return;
       }
+  
+      if (!response.ok) {
+        const data = await response.json();
+        console.error(`Failed to generate reply: ${data.message}`);
+        setGeneratedReply('Error generating reply.');
+        return;
+      }
+  
+      const data = await response.json();
+      setGeneratedReply(data.reply);
+      setIsReplyOpen(true);
     } catch (error) {
       console.error('Error generating smart reply:', error);
-      alert('Error generating smart reply.');
+      setGeneratedReply('Error generating reply.');
+    } finally {
+      setIsGeneratingReply(false);
     }
-    setIsGeneratingReply(false);
   };
+  
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -515,7 +549,7 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
 
       {/* Sentiment section */}
       {sentiment && (
-        <div className="mt-4 p-2 bg-teal-500 flex items-center">
+        <div className="mt-4 p-2 bg-white border-b mb-3 flex items-center">
           <h3 className="font-semibold">Sentiment:</h3>
           <span className="ml-2 text-sm">{sentiment}</span>
         </div>

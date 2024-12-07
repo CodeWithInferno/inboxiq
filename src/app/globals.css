@@ -5,6 +5,18 @@
 
 
 
+
+
+
+/* Slick */
+
+.slick-slider {
+  @apply bg-white shadow-sm;
+}
+
+
+
+
 body {
   /* font-family: Arial, Helvetica, sans-serif; */
 

@@ -242,7 +242,7 @@ export async function POST(req) {
     console.log('Sanitized Email Body:', sanitizedEmailBody);
 
     const cleanedEmailBody = stripHTML(sanitizedEmailBody); // Strip remaining HTML tags
-    const truncatedEmail = cleanedEmailBody.split(' ').slice(0, 1000).join(' '); // Limit to 1000 words
+    const truncatedEmail = cleanedEmailBody.split(' ').slice(0, 10000).join(' '); // Limit to 1000 words
     console.log('Truncated Email:', truncatedEmail);
 
     // Prompt for OpenAI

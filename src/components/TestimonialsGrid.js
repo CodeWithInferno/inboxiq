@@ -40,7 +40,7 @@ const TestimonialSlider = () => {
                             23k+ Customers gave their <span className="text-transparent bg-clip-text bg-gradient-to-tr from-indigo-600 to-violet-600">Feedback</span>
                         </h2>
                     </div>
-                    <div className="w-full lg:w-3/5">
+                    <div className="w-full ml-5 lg:w-3/5">
                         <Swiper
                             modules={[Pagination]}
                             pagination={{ clickable: true }}
@@ -86,3 +86,12 @@ const TestimonialSlider = () => {
 };
 
 export default TestimonialSlider;
+
+
+
+
+
+
+
+
+

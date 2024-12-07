@@ -20,7 +20,16 @@ export async function GET(req) {
     const record = await db.collection('Newsletters').findOne({ userId: user.sub });
 
     if (record && record.results) {
-      return new Response(JSON.stringify({ newsletters: record.results }), {
+      // Process the results to ensure correct counts and consistent format
+      const formattedResults = record.results.map((item) => ({
+        senderName: item.senderName || 'Unknown Sender',
+        senderEmail: item.senderEmail || 'Unknown Email',
+        emailIds: Array.isArray(item.emailIds) ? item.emailIds : [],
+        count: Array.isArray(item.emailIds) ? item.emailIds.length : 0, // Ensure count reflects current emailIds
+        unsubscribable: item.unsubscribable || 'No information provided',
+      }));
+
+      return new Response(JSON.stringify({ newsletters: formattedResults }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });

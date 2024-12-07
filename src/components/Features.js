@@ -2,7 +2,7 @@
 
 const Features = () => {
     return (
-        <section className="relative py-24 bg-white dark:bg-[#1a1a2e]">
+        <section className="relative py-24 bg-white dark:bg-transparent">
             <div className="container mx-auto px-4 flex items-center gap-16">
                 {/* Partially hidden image using <img> tag */}
                 <div className="absolute left-[-100px] lg:left-[-250px] hidden lg:block">
@@ -61,6 +61,7 @@ const Features = () => {
                 </div>
             </div>
         </section>
+        
     );
 };
 

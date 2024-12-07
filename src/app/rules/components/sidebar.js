@@ -40,7 +40,7 @@ const Sidebar = () => {
       {/* Navigation Links */}
       <nav className="flex-grow px-4 space-y-2">
         <Link
-          href="/ai-assistant"
+          href="/rules/ai-assistant"
           className="flex items-center py-2 px-3 rounded-md hover:bg-gray-800 transition"
         >
           <FaRobot className="mr-3" />

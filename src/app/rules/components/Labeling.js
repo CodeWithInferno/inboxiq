@@ -251,71 +251,74 @@ const Labeling = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md w-full">
-      <h2 className="text-lg font-semibold mb-4">Manage Labels</h2>
-      <div className="flex space-x-2 mb-4">
-        <input
-          type="text"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="Label name"
-          className="border p-2 rounded flex-1"
-        />
-        <input
-          type="color"
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-          className="w-12 h-10 p-0 border rounded"
-        />
-        <button
-          onClick={handleAddLabel}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Add Label
-        </button>
-      </div>
-      <ul className="space-y-2">
-        {labels.map((item) => (
-          <li
-            key={item._id}
-            className="flex items-center bg-white text-black justify-between p-2 border rounded"
-          >
-            <span
-              style={{ color: item.color }}
-              className="font-semibold"
-            >
-              {item.label}
-            </span>
-            <AiOutlineDelete
-              onClick={() => handleDeleteLabel(item._id)}
-              className="text-red-500 cursor-pointer hover:text-red-700"
-              title="Delete label"
-              style={{ fontSize: '1.25rem', marginLeft: '8px' }}
-            />
-          </li>
-        ))}
-      </ul>
+    <>
+      <div className="p-6 bg-white rounded-lg shadow-md w-full">
+        <h2 className="text-lg font-semibold mb-4">Manage Actions</h2>
+        <div className="flex space-x-2 mb-4">
+          <input
+            type="text"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="Label name"
+            className="border bg-white p-2 rounded flex-1"
+          />
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            className="w-12 h-10 p-0 border rounded"
 
+          />
+          <button
+            onClick={handleAddLabel}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Add Action
+          </button>
+        </div>
+        <ul className="space-y-2">
+          {(labels || []).map((item) => (
+            <li
+              key={item._id}
+              className="flex items-center bg-white text-black justify-between p-2 border rounded"
+            >
+              <span
+                style={{ color: item.color }}
+                className="font-semibold"
+              >
+                {item.label}
+              </span>
+              <AiOutlineDelete
+                onClick={() => handleDeleteLabel(item._id)}
+                className="text-red-500 cursor-pointer hover:text-red-700"
+                title="Delete label"
+                style={{ fontSize: '1.25rem', marginLeft: '8px' }}
+              />
+            </li>
+          ))}
+        </ul>
+
+      </div>
       {/* Category Management */}
-      <div className="mt-8 p-6 bg-white rounded-lg shadow-md w-full">
-        <h2 className="text-lg font-semibold mb-4">Manage Categories</h2>
+      <div className="mt-8 p-6 bg-white rounded-lg shadow-md w-[full]">
+        <h2 className="text-lg font-semibold mb-4">Manage Group</h2>
         <div className="flex space-x-2 mb-4">
           <input
             type="text"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             placeholder="Category name"
-            className="border p-2 rounded flex-1"
+            className="border bg-white p-2 rounded flex-1"
           />
           <button
             onClick={handleAddCategory}
             className="bg-green-500 text-white px-4 py-2 rounded"
           >
-            Add Category
+            Add Group
           </button>
         </div>
         <ul className="space-y-2">
-          {categories.map((item) => (
+          {(categories || []).map((item) => (
             <li
               key={item._id}
               className="flex items-center justify-between p-2 border rounded"
@@ -330,8 +333,9 @@ const Labeling = () => {
             </li>
           ))}
         </ul>
+
       </div>
-    </div>
+    </>
   );
 };
 
