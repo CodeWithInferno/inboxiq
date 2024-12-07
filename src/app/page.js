@@ -37,8 +37,8 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center h-[60vh] px-4 text-center">
         {/* Main Headline */}
-        <h1 className="font-extrabold font-serif text-5xl md:text-6xl lg:text-7xl leading-tight max-w-2xl">
-          Stop wasting half your day in Gmail
+        <h1 className="font-serif text-gray-400 font-extrabold  text-6xl md:text-6xl lg:text-7xl leading-tight max-w-2xl">
+          Stop wasting half your day in mail
         </h1>
 
         {/* Subheadline */}
@@ -47,9 +47,15 @@ export default function Home() {
         </p>
 
         {/* Call-to-Action Button */}
-        <button className="mt-8 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-lg font-semibold">
-          Get Started for Free
+        <button
+          className="px-8 py-4 mt-5 text-white font-semibold text-lg rounded-md transition-transform transform hover:scale-105
+             bg-gradient-to-r from-pink-500 to-purple-500 border-2 border-purple-500
+             shadow-lg hover:shadow-xl"
+        >
+          Get Started
         </button>
+
+
       </div>
 
       {/* Video Section */}
@@ -77,10 +83,10 @@ export default function Home() {
           <p className="leading-tight font-mono text-xl">InboxIQ love</p>
           <span className="mt-2 leading-tight text-4xl">Clean Inbox, Happy Life</span>
         </h2>
-        <div className="w-full text-left mx-auto mt-8 px-4">
+        <div className="w-full  text-left mx-auto mt-8 px-4">
           <TestimonialsGrid />
         </div>
-        <div className="mt-16">
+        <div className="mt-16 ">
           <Features />
         </div>
       </section>

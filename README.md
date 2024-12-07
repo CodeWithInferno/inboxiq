@@ -25,7 +25,7 @@ Your intelligent email assistant that makes email management smarter and more ef
 
 ## 🚀 Demo
 
-Try InboxIQ live on our [Demo Link](https://inboxiq.demo.link).
+Try InboxIQ live on our [Demo Link](https://inboxiq-seven.vercel.app).
 
 ## 📸 Screenshots
 
@@ -55,7 +55,7 @@ Try InboxIQ live on our [Demo Link](https://inboxiq.demo.link).
 1. **Clone the Repository**:
 
     ```bash
-    git clone https://github.com/yourusername/inboxiq.git
+    git clone https://github.com/CodeWithInferno/inboxiq.git
     cd inboxiq
     ```
 
@@ -71,11 +71,25 @@ Try InboxIQ live on our [Demo Link](https://inboxiq.demo.link).
     2. Add the following environment variables:
 
     ```bash
-    AUTH0_DOMAIN=your_auth0_domain
-    AUTH0_CLIENT_ID=your_auth0_client_id
-    AUTH0_CLIENT_SECRET=your_auth0_client_secret
-    GOOGLE_API_KEY=your_google_api_key
-    OPENAI_API_KEY=your_openai_api_key
+        GOOGLE_CLIENT_SECRET=""
+        GOOGLE_APPLICATION_CREDENTIALS=""
+        GCP_BUCKET_NAME=""
+        OPENAI_API_KEY=""
+        USE_OPENAI=""
+        DISABLED_API=""
+        GOOGLE_CLIENT_ID=""
+        TOKEN_ENCRYPTION_KEY=""
+
+        AUTH0_SECRET=""
+        AUTH0_BASE_URL=""
+        AUTH0_ISSUER_BASE_URL=""
+        AUTH0_CLIENT_ID=""
+        AUTH0_CLIENT_SECRET=""
+
+        NODE_ENV=""
+        GOOGLE_API_KEY=""
+        UPSTASH_REDIS_URL=""
+        UPSTASH_REDIS_TOKEN=""
     ```
 
 4. **Run the Application**:

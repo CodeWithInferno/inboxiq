@@ -9,6 +9,8 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get('email');
   const label = searchParams.get('label');
+  const query = searchParams.get('query'); // Extract the query parameter
+
 
   if (!email) {
     return new Response(JSON.stringify({ message: 'Email is required' }), {
@@ -76,15 +78,42 @@ export async function GET(req) {
     });
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    const { labelId, query } = getGmailLabelAndQuery(label);
+    // const { labelId, query } = getGmailLabelAndQuery(label);
 
-    console.log(`Fetching emails with label: ${labelId} and query: ${query}`);
-    const response = await gmail.users.messages.list({
-      userId: 'me',
-      labelIds: [labelId],
-      maxResults: 10,
-      q: query,
-    });
+    
+    // console.log(`Fetching emails with label: ${labelId} and query: ${query}`);
+    // // const response = await gmail.users.messages.list({
+    // //   userId: 'me',
+    // //   labelIds: [labelId],
+    // //   q: query, // Ensure query is passed here
+    // //   maxResults: 10,
+    // // });
+    // const response = await gmail.users.messages.list({
+    //   userId: 'me',
+    //   labelIds: labelId ? [labelId] : undefined,
+    //   q: query || '', // Query should be correctly applied here
+    //   maxResults: 10,
+    // });
+    // console.log(`Fetching emails with label: ${labelId}, query: ${query}`);
+    
+
+
+
+    const { labelId, query: defaultQuery } = getGmailLabelAndQuery(label);
+
+// Combine the default query and search query
+const combinedQuery = query ? `${query} ${defaultQuery}` : defaultQuery;
+
+
+console.log(`Fetching emails with label: ${labelId}, query: ${combinedQuery}`); // Debug
+
+const response = await gmail.users.messages.list({
+  userId: 'me',
+  labelIds: [labelId],
+  q: combinedQuery, // Use combined query here
+  maxResults: 10,
+});
+
 
     if (!response.data.messages) {
       console.log("No emails found.");

@@ -170,8 +170,6 @@
 
 
 
-
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -182,6 +180,8 @@ const RulesPage = () => {
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [unsubscribing, setUnsubscribing] = useState({});
+  const [popupData, setPopupData] = useState(null); // Data for the popup
+  const [action, setAction] = useState('markAsRead'); // Default action
 
   const fetchNewsletters = async () => {
     setLoading(true);
@@ -245,13 +245,13 @@ const RulesPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ emailId }),
+        body: JSON.stringify({ emailId, action }), // Include selected action
       });
-  
+
       if (response.ok) {
         const data = await response.json();
         console.log('Unsubscribe response:', data);
-  
+
         // Update the newsletters list
         setNewsletters(data.updatedNewsletters);
       } else {
@@ -261,9 +261,17 @@ const RulesPage = () => {
       console.error('Error during unsubscribe:', error);
     } finally {
       setUnsubscribing((prev) => ({ ...prev, [emailId]: false })); // Mark as unsubscribed
+      setPopupData(null); // Close the popup
     }
   };
-  
+
+  const openPopup = (newsletter) => {
+    setPopupData(newsletter);
+  };
+
+  const closePopup = () => {
+    setPopupData(null);
+  };
 
   useEffect(() => {
     fetchNewsletters();
@@ -304,30 +312,92 @@ const RulesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {newsletters.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium">{item.senderName}</p>
-                      <p className="text-xs text-gray-500">{item.senderEmail}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">{item.count}</td>
-                  <td className="px-6 py-4">
-                    <button
-                      className="px-3 py-1 text-white bg-gray-700 rounded hover:bg-gray-600"
-                      onClick={() => handleUnsubscribe(item.emailIds[0])}
-                      disabled={unsubscribing[item.emailIds[0]]}
-                    >
-                      {unsubscribing[item.emailIds[0]] ? 'Unsubscribing...' : 'Unsubscribe'}
-                    </button>
+              {Array.isArray(newsletters) && newsletters.length > 0 ? (
+                newsletters.map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium">{item.senderName}</p>
+                        <p className="text-xs text-gray-500">{item.senderEmail}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">{item.count}</td>
+                    <td className="px-6 py-4">
+                      <button
+                        className="px-3 py-1 text-white bg-gray-700 rounded hover:bg-gray-600"
+                        onClick={() => openPopup(item)}
+                        disabled={unsubscribing[item.emailIds[0]]}
+                      >
+                        {unsubscribing[item.emailIds[0]] ? 'Processing...' : 'Unsubscribe'}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="px-6 py-4 text-center text-gray-500">
+                    No newsletters found.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
+
           </table>
         </div>
       </div>
+
+      {popupData && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white w-96 rounded-lg p-6 shadow-lg relative">
+            {/* Close Button */}
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              onClick={closePopup}
+            >
+              ✕
+            </button>
+
+            {/* Popup Header */}
+            <h3 className="text-lg font-extrabold text-gray-800 mb-4">
+              Unsubscribe Confirmation
+            </h3>
+
+            {/* Popup Body */}
+            <p className="text-sm text-gray-600 mb-4">
+              Are you sure you want to unsubscribe from{' '}
+              <span className="font-semibold text-gray-900">{popupData.senderName}</span>?
+            </p>
+
+            {/* Dropdown for Email Action */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Choose an action for existing emails:
+              </label>
+              <select
+                className="block w-full bg-gray-50 border border-gray-300 rounded-md py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500"
+                value={action}
+                onChange={(e) => setAction(e.target.value)}
+              >
+                <option value="markAsRead">Mark as Read</option>
+                <option value="delete">Delete</option>
+                <option value="archive">Archive</option>
+              </select>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-6 flex justify-end space-x-3">
+
+              <button
+                className="px-4 py-2 text-sm font-medium text-black border bg-white rounded-md "
+                onClick={() => handleUnsubscribe(popupData.emailIds[0])}
+              >
+                Unsubscribe
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
