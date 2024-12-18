@@ -41,6 +41,7 @@
     "clsx": "^2.1.1",
     "cookies-next": "^4.3.0",
     "crypto": "^1.0.1",
+    "docx-preview": "^0.3.3",
     "dompurify": "^3.1.7",
     "express": "^4.21.1",
     "firebase": "^11.0.1",
@@ -50,12 +51,15 @@
     "gpt-3-encoder": "^1.1.4",
     "graphql": "^16.9.0",
     "htmlparser2": "^9.1.0",
+    "ical": "^0.8.0",
     "ical.js": "^2.1.0",
     "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.454.0",
     "luxon": "^3.5.0",
+    "mailparser": "^3.7.2",
+    "mammoth": "^1.8.0",
     "md5": "^2.3.0",
     "mongodb": "^6.9.0",
     "next": "14.2.15",
@@ -72,7 +76,6 @@
     "react-draggable": "^4.4.6",
     "react-google-calendar-api": "^2.3.0",
     "react-icons": "^5.4.0",
-
     "react-quill": "^2.0.0",
     "react-resizable": "^3.0.5",
     "react-slick": "^0.30.2",
@@ -83,7 +86,8 @@
     "swiper": "^11.1.14",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "three": "^0.169.0"
+    "three": "^0.169.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.26.0",
