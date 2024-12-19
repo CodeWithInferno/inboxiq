@@ -173,7 +173,7 @@ const FilePreview = ({ files, onRemove }) => {
           onClick={() => setSelectedFile(file)}
           className="text-blue-500 underline text-sm"
         >
-          View PDF
+          View PDF1
         </button>
       );
     } else if (file.type.startsWith("text/")) {

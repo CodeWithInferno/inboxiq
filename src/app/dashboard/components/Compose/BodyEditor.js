@@ -29,7 +29,7 @@ const BodyEditor = ({ body, setBody, handleContextCopy, handleContextPaste, hand
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onClick={handleContextCopy}>Copy</ContextMenuItem>
+        <ContextMenuItem onClick={handleContextCopy}>Copy1</ContextMenuItem>
         <ContextMenuItem onClick={handleContextPaste}>Paste</ContextMenuItem>
         <ContextMenuItem onClick={handleContextCut}>Cut</ContextMenuItem>
       </ContextMenuContent>

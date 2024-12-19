@@ -5,7 +5,7 @@ const SubjectField = ({ message, handleChange }) => {
     <input
       type="text"
       name="subject"
-      placeholder="Subject"
+      placeholder="Subject1"
       value={message.subject}
       onChange={handleChange}
       className="p-2 border bg-white rounded w-full"

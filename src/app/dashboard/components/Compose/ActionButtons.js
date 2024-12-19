@@ -9,7 +9,7 @@ const ActionButtons = ({ isSending, onClose, handleSubmit }) => {
         onClick={onClose}
         disabled={isSending}
       >
-        Cancel
+        Cancel1
       </button>
       <button
         type="submit"

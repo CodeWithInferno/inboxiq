@@ -19,7 +19,7 @@ const RecipientFields = ({ message, handleChange, showCcBcc, setShowCcBcc }) => 
           onClick={() => setShowCcBcc(!showCcBcc)}
           title="Add CC/BCC"
         >
-          Toggle CC/BCC
+          Toggle CC/BCC1
         </button>
       </div>
       {showCcBcc && (

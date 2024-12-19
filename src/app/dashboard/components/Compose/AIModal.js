@@ -18,7 +18,7 @@ const AIModal = ({ isOpen, setIsOpen, aiInput, setAiInput, handleAiGenerate }) =
             onClick={() => setIsOpen(false)}
             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
           >
-            Cancel
+            Cancel1
           </button>
           <button
             onClick={async () => {
