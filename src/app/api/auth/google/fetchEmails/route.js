@@ -78,31 +78,13 @@ export async function GET(req) {
     });
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // const { labelId, query } = getGmailLabelAndQuery(label);
-
-    
-    // console.log(`Fetching emails with label: ${labelId} and query: ${query}`);
-    // // const response = await gmail.users.messages.list({
-    // //   userId: 'me',
-    // //   labelIds: [labelId],
-    // //   q: query, // Ensure query is passed here
-    // //   maxResults: 10,
-    // // });
-    // const response = await gmail.users.messages.list({
-    //   userId: 'me',
-    //   labelIds: labelId ? [labelId] : undefined,
-    //   q: query || '', // Query should be correctly applied here
-    //   maxResults: 10,
-    // });
-    // console.log(`Fetching emails with label: ${labelId}, query: ${query}`);
-    
-
-
 
     const { labelId, query: defaultQuery } = getGmailLabelAndQuery(label);
 
 // Combine the default query and search query
-const combinedQuery = query ? `${query} ${defaultQuery}` : defaultQuery;
+// const combinedQuery = query ? `${query} ${defaultQuery}` : defaultQuery;
+const combinedQuery = `${query || ''} ${defaultQuery || ''}`.trim();
+
 
 
 console.log(`Fetching emails with label: ${labelId}, query: ${combinedQuery}`); // Debug
@@ -134,43 +116,71 @@ const response = await gmail.users.messages.list({
       .find({ userId: user.sub, status: { $in: [true, "true"] } })
       .toArray();
 
-    const fetchAllMessages = async (response) => {
-      return Promise.all(
-        response.data.messages.map(async (message) => {
-          const msg = await gmail.users.messages.get({
-            userId: 'me',
-            id: message.id,
-          });
-
-          const decodeBase64 = (data) => Buffer.from(data || '', 'base64').toString('utf-8');
-          const getMessageBody = (msg) => {
-            let body = '';
-            const parts = msg.payload.parts || [msg.payload];
-            for (const part of parts) {
-              if (part.mimeType === 'text/html' && part.body?.data) {
-                body = decodeBase64(part.body.data);
-                break;
-              } else if (part.mimeType === 'text/plain' && part.body?.data) {
-                body = decodeBase64(part.body.data);
+      const fetchAllMessages = async (response) => {
+        return Promise.all(
+          response.data.messages.map(async (message) => {
+            const msg = await gmail.users.messages.get({
+              userId: 'me',
+              id: message.id,
+            });
+      
+            const decodeBase64 = (data) => Buffer.from(data || '', 'base64').toString('utf-8');
+      
+            const getMessageBody = (msg) => {
+              let body = '';
+              const parts = msg.payload.parts || [msg.payload];
+              for (const part of parts) {
+                if (part.mimeType === 'text/html' && part.body?.data) {
+                  body = decodeBase64(part.body.data);
+                  break;
+                } else if (part.mimeType === 'text/plain' && part.body?.data) {
+                  body = decodeBase64(part.body.data);
+                }
               }
-            }
-            return body || 'No content available';
-          };
-
-          const body = getMessageBody(msg.data);
-          return {
-            id: msg.data.id,
-            threadId: msg.data.threadId,
-            subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
-            from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
-            body,
-            snippet: msg.data.snippet,
-            timestamp: new Date(parseInt(msg.data.internalDate)),
-            isRead: !msg.data.labelIds.includes('UNREAD'),
-          };
-        })
-      );
-    };
+              return body || 'No content available';
+            };
+      
+            const getAttachments = async (msg) => {
+              const attachments = [];
+              const parts = msg.payload.parts || [];
+            
+              for (const part of parts) {
+                if (part.filename && part.body?.attachmentId) {
+                  const attachment = await gmail.users.messages.attachments.get({
+                    userId: 'me',
+                    messageId: msg.id,
+                    id: part.body.attachmentId,
+                  });
+            
+                  attachments.push({
+                    name: part.filename,
+                    type: part.mimeType || "application/octet-stream", // Default if MIME type missing
+                    content: attachment.data.data, // Base64 encoded content
+                  });
+                }
+              }
+              return attachments;
+            };
+            
+      
+            const body = getMessageBody(msg.data);
+            const attachments = await getAttachments(msg.data);
+      
+            return {
+              id: msg.data.id,
+              threadId: msg.data.threadId,
+              subject: msg.data.payload.headers.find((h) => h.name === 'Subject')?.value || '(No Subject)',
+              from: msg.data.payload.headers.find((h) => h.name === 'From')?.value,
+              body,
+              attachments,
+              snippet: msg.data.snippet,
+              timestamp: new Date(parseInt(msg.data.internalDate)),
+              isRead: !msg.data.labelIds.includes('UNREAD'),
+            };
+          })
+        );
+      };
+      
 
     if (userRules.length === 0) {
       console.log("No active rules found for this user");
