@@ -8,8 +8,7 @@ import MessageDetails from '../components/MessageDetails';
 import Compose from '../components/Compose';
 import { FaExclamationCircle, FaSearch } from 'react-icons/fa';
 import Search from '../components/search';
-
-
+import Drafts from './components/Drafts';
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -25,6 +24,7 @@ const DashboardPage = () => {
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [isClassifying, setIsClassifying] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
+  const [composeData, setComposeData] = useState(null); // State to hold draft data for Compose
 
   useEffect(() => {
     if (!slug) {
@@ -69,12 +69,6 @@ const DashboardPage = () => {
     }
   };
 
-
-
-
-
-
-
   const classifyEmails = async (emails) => {
     const classifiedEmails = [];
 
@@ -85,7 +79,6 @@ const DashboardPage = () => {
           body: truncateContent(email.snippet || '', 800),
         };
 
-        // Log the email content for inspection
         console.log('Sending email for classification:', emailContent);
 
         const response = await fetch('/api/ai/email/classifyEmail', {
@@ -114,16 +107,10 @@ const DashboardPage = () => {
     return classifiedEmails;
   };
 
-
-  // Utility function to truncate text to avoid token limit issues
   const truncateContent = (text, limit) => {
     return text.length > limit ? text.slice(0, limit - 1) + '…' : text;
   };
 
-
-
-
-  // Email labeling function reintroduced from the backup code
   const labelEmails = async () => {
     return await Promise.all(
       emails.map(async (email) => {
@@ -176,14 +163,12 @@ const DashboardPage = () => {
 
   const handleOpenMessage = async (message) => {
     if (message && message.threadId) {
-
       try {
-        // Mark the message as read if it hasn't been already
         if (!message.isRead) {
           await markAsRead(message.id);
         }
-        setSelectedMessage(message); // Set the selected message for display
-        await fetchThread(message.threadId); // Fetch the thread for the selected message
+        setSelectedMessage(message);
+        await fetchThread(message.threadId);
       } catch (error) {
         console.error('Error opening message:', error.message);
       }
@@ -226,11 +211,7 @@ const DashboardPage = () => {
     setThreadMessages([]);
   };
 
-
-
   const handleBackToInbox = () => {
-    setSearchMode(false);
-    setSearchQuery('');
     setEmails([]);
     const label = getGmailLabel('inbox');
     fetchEmails(label, user.email);
@@ -241,7 +222,13 @@ const DashboardPage = () => {
   };
 
   const closeComposeModal = () => {
+    setComposeData(null); // Clear draft data
     setIsComposeOpen(false);
+  };
+
+  const handleDraftClick = (draft) => {
+    setComposeData(draft); // Pass draft data to Compose
+    setIsComposeOpen(true); // Open the Compose modal
   };
 
   const handleLoadMore = () => {
@@ -265,27 +252,23 @@ const DashboardPage = () => {
       </div>
     );
   }
+
   const handleSearchSubmit = async (query) => {
-    setEmails([]); // Clear existing emails
-    setLoading(true); // Show loading state
-    const label = getGmailLabel(slug); // Use the appropriate label
+    setEmails([]);
+    setLoading(true);
+    const label = getGmailLabel(slug);
     try {
-      // Make API call to fetch emails based on the query
       const url = `/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(user?.email)}&query=${encodeURIComponent(query)}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Error fetching emails');
       const data = await response.json();
-      setEmails(data.messages || []); // Update email list
+      setEmails(data.messages || []);
     } catch (error) {
       console.error('Error fetching emails:', error.message);
     } finally {
-      setLoading(false); // Hide loading state
+      setLoading(false);
     }
   };
-
-
-
-
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -295,19 +278,14 @@ const DashboardPage = () => {
 
         {!selectedMessage && (
           <>
-            {/* Add the Search Component */}
             <Search
               userEmail={user?.email}
               onSearchSubmit={(query) => {
-                console.log('Search query submitted:', query); // Debug search query
-                const label = getGmailLabel(slug); // Dynamically determine the label
-                fetchEmails(label, user?.email, query); // Pass the query
+                console.log('Search query submitted:', query);
+                const label = getGmailLabel(slug);
+                fetchEmails(label, user?.email, query);
               }}
             />
-
-
-
-
 
             <div className="flex mb-5 space-x-4">
               <button
@@ -319,16 +297,14 @@ const DashboardPage = () => {
               <button
                 onClick={handleLabelEmails}
                 disabled={isClassifying}
-                className={`px-5 py-3 rounded-lg shadow ${isClassifying ? 'bg-gray-400' : 'bg-transparent text-black border'
-                  } transition`}
+                className={`px-5 py-3 rounded-lg shadow ${isClassifying ? 'bg-gray-400' : 'bg-transparent text-black border'} transition`}
               >
                 {isClassifying ? 'Labeling...' : 'Label Emails'}
               </button>
               <button
                 onClick={handleBlockColdEmails}
                 disabled={isBlocking}
-                className={`px-5 py-3 rounded-lg shadow ${isBlocking ? 'bg-gray-400' : 'bg-transparent text-black border'
-                  } transition`}
+                className={`px-5 py-3 rounded-lg shadow ${isBlocking ? 'bg-gray-400' : 'bg-transparent text-black border'} transition`}
               >
                 {isBlocking ? 'Blocking...' : 'Block Cold Emails'}
               </button>
@@ -336,8 +312,9 @@ const DashboardPage = () => {
           </>
         )}
 
-
-        {loading && emails.length === 0 ? (
+        {slug === 'drafts' ? (
+          <Drafts email={user?.email} onDraftClick={handleDraftClick} />
+        ) : loading && emails.length === 0 ? (
           <p className="text-gray-600">Loading emails...</p>
         ) : selectedMessage ? (
           <MessageDetails
@@ -358,8 +335,7 @@ const DashboardPage = () => {
                   key={email.id}
                   className={`relative p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer ${email.isRead
                     ? 'bg-gray-300 text-gray-900'
-                    : 'bg-white text-gray-900'
-                    } ${email.category === 'Spam' ? 'border border-red-500' : ''}`}
+                    : 'bg-white text-gray-900'} ${email.category === 'Spam' ? 'border border-red-500' : ''}`}
                   onClick={() => handleOpenMessage(email)}
                 >
                   <h2 className="font-bold text-xl mb-2">{email.subject || '(No Subject)'}</h2>
@@ -368,8 +344,7 @@ const DashboardPage = () => {
 
                   {email.priority && (
                     <FaExclamationCircle
-                      className={`absolute top-2 right-2 ${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'
-                        }`}
+                      className={`absolute top-2 right-2 ${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'}`}
                       size={20}
                     />
                   )}
@@ -389,7 +364,7 @@ const DashboardPage = () => {
         )}
       </div>
 
-      <Compose isOpen={isComposeOpen} onClose={closeComposeModal} userEmail={user?.email} />
+      <Compose isOpen={isComposeOpen} onClose={closeComposeModal} userEmail={user?.email} draftData={composeData} />
     </div>
   );
 };
