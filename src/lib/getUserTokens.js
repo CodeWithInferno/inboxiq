@@ -49,9 +49,9 @@
 
 
 
-import clientPromise from './mongodb';
+import clientPromise from './mongodb.js';
 import { google } from 'googleapis';
-import { decryptToken, encryptToken } from '@/utils/crypto'; // Import encryption utilities
+import { decryptToken, encryptToken } from '../utils/crypto.js'; // Import encryption utilities
 
 export default async function getUserTokens(userEmail) {
   const client = await clientPromise;

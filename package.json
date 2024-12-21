@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
+    "start-cron": "node cron.js",
     "test:watch": "jest --watch"
   },
   "dependencies": {
@@ -43,6 +44,7 @@
     "crypto": "^1.0.1",
     "docx-preview": "^0.3.3",
     "dompurify": "^3.1.7",
+    "dotenv": "^16.4.7",
     "express": "^4.21.1",
     "firebase": "^11.0.1",
     "framer-motion": "^11.11.10",
@@ -72,6 +74,9 @@
     "quill": "^2.0.2",
     "react": "^18",
     "react-bootstrap": "^2.10.6",
+    "react-calendar": "^5.1.0",
+    "react-date-picker": "^11.0.0",
+    "react-datepicker": "^7.5.0",
     "react-dom": "^18",
     "react-draggable": "^4.4.6",
     "react-google-calendar-api": "^2.3.0",
