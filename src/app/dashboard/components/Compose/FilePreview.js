@@ -156,7 +156,6 @@ import { Dialog } from "@headlessui/react";
 const FilePreview = ({ files, onRemove }) => {
   const [selectedFile, setSelectedFile] = useState(null);
 
-  // Renders file preview (image, PDF, text)
   const renderFilePreview = (file) => {
     if (file.type.startsWith("image/")) {
       return (
@@ -173,7 +172,7 @@ const FilePreview = ({ files, onRemove }) => {
           onClick={() => setSelectedFile(file)}
           className="text-blue-500 underline text-sm"
         >
-          View PDF1
+          View PDF
         </button>
       );
     } else if (file.type.startsWith("text/")) {
@@ -191,7 +190,6 @@ const FilePreview = ({ files, onRemove }) => {
 
   return (
     <div className="space-y-2">
-      {/* File List */}
       {files.map((file, index) => (
         <div
           key={index}
@@ -213,7 +211,6 @@ const FilePreview = ({ files, onRemove }) => {
         </div>
       ))}
 
-      {/* Full-Screen Popup */}
       {selectedFile && (
         <Dialog
           open={Boolean(selectedFile)}
@@ -221,15 +218,12 @@ const FilePreview = ({ files, onRemove }) => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80"
         >
           <div className="relative w-[90%] h-[90%] bg-white rounded-lg shadow-lg overflow-hidden">
-            {/* Close Button */}
             <button
               onClick={() => setSelectedFile(null)}
               className="absolute top-4 right-4 text-gray-700 hover:text-gray-900 text-2xl font-bold"
             >
               &times;
             </button>
-
-            {/* File Content */}
             <div className="flex justify-center items-center w-full h-full overflow-auto">
               {selectedFile.type.startsWith("image/") && (
                 <img
@@ -262,5 +256,6 @@ const FilePreview = ({ files, onRemove }) => {
     </div>
   );
 };
+
 
 export default FilePreview;
