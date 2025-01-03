@@ -596,7 +596,7 @@ const RulesPage = () => {
                           <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                           <p className="text-gray-500 text-sm">No newsletters found</p>
                           <p className="text-gray-400 text-xs mt-1">
-                            Click "Scan Newsletters" to find your subscriptions
+                            Click Scan Newsletters to find your subscriptions
                           </p>
                         </td>
                       </tr>
@@ -628,7 +628,8 @@ const RulesPage = () => {
                 </h3>
               </div>
               <p className="text-sm text-gray-600">
-                You're about to unsubscribe from <span className="font-medium text-gray-900">{popupData.senderName}</span>. This will prevent future emails from this sender.
+              Youre about to unsubscribe from <span className="font-medium text-gray-900">{popupData.senderName}</span>.
+              . This will prevent future emails from this sender.
               </p>
             </div>
 
