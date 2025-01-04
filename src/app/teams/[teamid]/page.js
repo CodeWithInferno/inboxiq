@@ -1,27 +1,27 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import Sidebar from '../components/Sidebar'; // Ensure Sidebar component is correctly located
-import TeamDetails from '../components/TeamDetails'; // Ensure TeamDetails component is correctly located
-import TodoList from '../components/Todo'; // Ensure TodoList component is correctly located
-import MembersList from '../components/MemberList'; // Import MembersList component
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Sidebar from "../components/Sidebar";
+import TeamDetails from "../components/TeamDetails";
+import TodoList from "../components/Todo";
+import MembersList from "../components/MemberList";
 
-export default function TeamOwnerDashboard() {
+export default function TeamDashboard() {
   const [teamData, setTeamData] = useState(null);
   const [error, setError] = useState(null);
-  const params = useParams(); // Use useParams to get dynamic route params
+  const params = useParams();
 
   useEffect(() => {
     const fetchTeamData = async () => {
       try {
         const response = await fetch(`/api/teams/getTeams?teamId=${params.teamid}`);
-        if (!response.ok) throw new Error('Failed to fetch team data');
+        if (!response.ok) throw new Error("Failed to fetch team data");
         const data = await response.json();
         setTeamData(data.data || null);
       } catch (err) {
-        console.error(err);
-        setError('Failed to fetch team data');
+        console.error("Error fetching team data:", err);
+        setError("Failed to fetch team data");
       }
     };
 
@@ -29,11 +29,9 @@ export default function TeamOwnerDashboard() {
   }, [params.teamid]);
 
   return (
-    <div className="flex overflow-auto  h-screen">
-      {/* Sidebar Component */}
+    <div className="flex overflow-auto h-screen">
       <Sidebar />
 
-      {/* Main Content */}
       <div className="ml-64 p-6 flex-grow">
         {error ? (
           <p className="text-red-500">{error}</p>
@@ -45,9 +43,8 @@ export default function TeamOwnerDashboard() {
         ) : (
           <p className="text-gray-600">Loading team data...</p>
         )}
-        {/* Members List */}
         <div className="mt-6 pb-5">
-        <MembersList teamId={params.teamid} />
+          <MembersList teamId={teamData?.teamId || null} /> {/* Pass teamId explicitly */}
         </div>
       </div>
     </div>

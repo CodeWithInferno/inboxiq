@@ -355,42 +355,42 @@ const Compose = ({ isOpen, onClose, userEmail, draftData }) => {
         userEmail,
         scheduledTime: scheduledTime.toISOString(),
       };
-  
+
       console.log("Payload to /api/Schedule/create:", payload);
-  
+
       const response = await fetch("/api/Schedule/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Error response from API:", errorData);
         throw new Error("Failed to schedule email");
       }
-  
+
       const data = await response.json();
       console.log("Email scheduled successfully:", data);
     } catch (error) {
       console.error("Error scheduling email:", error.message);
     }
   };
-  
+
 
   const handleAiGenerate = async () => {
     if (!aiInput) return;
     try {
-      const response = await fetch("/api/ai/generate", {
+      const response = await fetch("/api/ai/compose/emailTemplates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: aiInput, userEmail }),
+        body: JSON.stringify({ templateType: aiInput, userEmail }),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || "Failed to generate content");
       }
-      setBody((prevBody) => `${prevBody}\n${data.generatedContent}`);
+      setBody((prevBody) => `${prevBody}\nSubject: ${data.subject}\n\n${data.body}`);
       setAiInput("");
     } catch (error) {
       console.error("Error generating content:", error.message);
@@ -398,6 +398,7 @@ const Compose = ({ isOpen, onClose, userEmail, draftData }) => {
       setIsAiModalOpen(false);
     }
   };
+  
 
   if (!isOpen) return null;
 
@@ -413,7 +414,22 @@ const Compose = ({ isOpen, onClose, userEmail, draftData }) => {
             setShowCcBcc={setShowCcBcc}
           />
           <SubjectField message={message} handleChange={handleChange} />
-          <BodyEditor body={body} setBody={handleBodyChange} />
+          {/* <BodyEditor body={body} setBody={handleBodyChange} /> */}
+          <BodyEditor
+            body={body}
+            setBody={handleBodyChange}
+            handleContextCopy={() => navigator.clipboard.writeText(body)}
+            handleContextPaste={async () => {
+              const text = await navigator.clipboard.readText();
+              setBody((prev) => `${prev}${text}`);
+            }}
+            handleContextCut={() => {
+              navigator.clipboard.writeText(body);
+              setBody("");
+            }}
+            setIsAiModalOpen={setIsAiModalOpen}
+          />
+
           <Attachments
             attachments={attachments}
             handleFileChange={handleFileChange}
