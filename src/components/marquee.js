@@ -114,6 +114,7 @@ export function MarqueeDemoHorizontal() {
         </h2>
       </div>
 
+
       {/* Marquee Content */}
       <div className="relative">
         <Marquee pauseOnHover className="[--duration:30s] py-4">
