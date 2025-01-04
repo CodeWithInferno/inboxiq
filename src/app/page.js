@@ -177,7 +177,7 @@ import Features3 from "@/components/Features3";
 import Features4 from "@/components/Features4";
 import Footer from "@/components/Footer";
 import { MarqueeDemoHorizontal } from "@/components/marquee";
-import HeroVideoDialog from "@/components/ui/hero-video-dialog"; // Import the HeroVideoDialog component
+// import HeroVideoDialog from "@/components/ui/hero-video-dialog"; // Import the HeroVideoDialog component
 import Problem from "@/components/Problems"; // Import the Problem component
 import Pricing from "@/components/Pricing"; // Import the Pricing component
 
@@ -237,7 +237,7 @@ export default function Home() {
           </div>
 
           {/* Video Section Replacement */}
-          <div className="mt-24 px-4" id="demo">
+          {/* <div className="mt-24 px-4" id="demo">
             <div className="relative mx-auto max-w-6xl">
               <HeroVideoDialog
                 className="dark:hidden block"
@@ -254,7 +254,7 @@ export default function Home() {
                 thumbnailAlt="Hero Video"
               />
             </div>
-          </div>
+          </div> */}
 
         </div>
       </section>
