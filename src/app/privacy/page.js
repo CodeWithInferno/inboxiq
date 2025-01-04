@@ -6,7 +6,7 @@ const PrivacyPolicy = () => {
       <h1>Privacy Policy</h1>
       <p><strong>Effective Date:</strong> 04.01.2025</p>
       <p>
-        [Your Application Name] ("we," "our," or "us") respects your privacy and is committed to
+        [Your Application Name] (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) respects your privacy and is committed to
         protecting the personal information that you share with us. This Privacy Policy explains how
         we collect, use, and safeguard your information when you use our application, [Your
         Application Name], accessible at [Your Application URL].
