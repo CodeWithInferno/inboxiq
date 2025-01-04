@@ -18,7 +18,7 @@ const geistMono = localFont({
 
 export const metadata = {
   title: "InboxIQ",
-  description: "Smart email management for your team",
+  description: "Smart email management for you and your team",
 };
 
 export default function RootLayout({ children }) {
