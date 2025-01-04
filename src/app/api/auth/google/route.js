@@ -155,7 +155,7 @@ import { google } from 'googleapis';
 
 export async function GET(req) {
   try {
-    const redirectUri = 'https://your-production-domain.com/api/auth/google/callback';
+    const redirectUri = 'http://inboxiq-seven.vercel.app/api/auth/google/callback';
 
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
