@@ -51,7 +51,6 @@
 
 
 
-
 import { connectToDatabase } from '@/lib/mongodb'; // Ensure this points to your MongoDB connection logic
 import { NextResponse } from 'next/server';
 
@@ -71,9 +70,10 @@ export async function GET(req) {
 
     // Connect to the TeamHubDB database
     const db = await connectToDatabase(process.env.PROFESSIONAL_DB); // Use the TeamHubDB database
+    const teamsCollection = db.collection('Teams');
 
     // Fetch the team data from the 'Teams' collection
-    const team = await db.collection('Teams').findOne({ teamId });
+    const team = await teamsCollection.findOne({ teamId });
 
     // Check if the team exists
     if (!team) {

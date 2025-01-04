@@ -4,12 +4,17 @@ import { useState } from 'react';
 
 export default function TeamDetails({ teamData }) {
   const [isCopied, setIsCopied] = useState(false);
+  if (!teamData) {
+    return <p className="text-gray-600">Loading team details...</p>;
+  }
 
   const copyAccessCode = () => {
-    navigator.clipboard.writeText(teamData.AccessCode);
+    navigator.clipboard.writeText(teamData.joinCode);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000); // Reset copied state after 2 seconds
   };
+  const { organization, privacy, description } = teamData;
+
 
   return (
     <div className="p-8 bg-gradient-to-b from-blue-50 to-gray-100 shadow-xl w-full max-w-lg rounded-lg border border-gray-200">
@@ -22,13 +27,13 @@ export default function TeamDetails({ teamData }) {
             <strong className="block text-gray-600 text-sm uppercase tracking-wide">
               Team Name
             </strong>
-            <span className="truncate w-56 block">{teamData.teamName}</span>
+            <span className="truncate w-56 block">{organization?.teamName}</span>
           </p>
           <p className="text-gray-800 font-medium break-words w-full">
             <strong className="block text-gray-600 text-sm uppercase tracking-wide">
               Privacy
             </strong>
-            <span className="truncate w-56 block">{teamData.privacy}</span>
+            <span className="truncate w-56 block">{privacy}</span>
           </p>
         </div>
         <div className="flex flex-col space-y-4">
@@ -36,13 +41,13 @@ export default function TeamDetails({ teamData }) {
             <strong className="block text-gray-600 text-sm uppercase tracking-wide">
               Department Name
             </strong>
-            <span className="truncate w-56 block">{teamData.departmentName}</span>
+            <span className="truncate w-56 block">{organization?.departmentName}</span>
           </p>
           <p className="text-gray-800 font-medium break-words w-full">
             <strong className="block text-gray-600 text-sm uppercase tracking-wide">
               Company Name
             </strong>
-            <span className="truncate w-56 block">{teamData.companyName}</span>
+            <span className="truncate w-56 block">{organization?.companyName}</span>
           </p>
           <p className="text-gray-800 font-medium break-words w-full">
             <strong className="block text-gray-600 text-sm uppercase tracking-wide">
@@ -57,7 +62,7 @@ export default function TeamDetails({ teamData }) {
         className="mt-6 text-center bg-gray-50 p-4 rounded-lg border cursor-pointer hover:bg-gray-100 transition"
       >
         <p className="text-gray-800 font-bold text-lg">
-          Access Code: <span className="text-blue-600">{teamData.AccessCode}</span>
+          Access Code: <span className="text-blue-600">{teamData.joinCode}</span>
         </p>
         {isCopied && (
           <p className="text-green-500 mt-2 text-sm">

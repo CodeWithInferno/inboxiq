@@ -9,8 +9,13 @@ export default function MembersList({ teamId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch team members
   useEffect(() => {
+    if (!teamId) {
+      console.error('teamId is missing:', teamId); // Debugging log
+      setError('Team ID is required to fetch members.');
+      return;
+    }
+
     const fetchMembers = async () => {
       try {
         setLoading(true);
@@ -19,7 +24,7 @@ export default function MembersList({ teamId }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ teamId }),
+          body: JSON.stringify({ teamId }), // Ensure teamId is passed correctly
         });
 
         const data = await response.json();
@@ -28,9 +33,9 @@ export default function MembersList({ teamId }) {
           throw new Error(data.message || 'Failed to fetch team members');
         }
 
-        setMembers(data.members);
+        setMembers(data.members || []);
       } catch (err) {
-        console.error('Error:', err.message);
+        console.error('Error fetching members:', err.message);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -42,8 +47,7 @@ export default function MembersList({ teamId }) {
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
-      {/* Header with Add Member Button */}
-      <div className="flex justify-between items-center mb-4"> 
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Team Members</h2>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -53,46 +57,35 @@ export default function MembersList({ teamId }) {
         </button>
       </div>
 
-      {/* Members Table */}
       {loading ? (
         <p className="text-gray-600">Loading members...</p>
       ) : error ? (
         <p className="text-red-500">Error: {error}</p>
+      ) : members.length > 0 ? (
+        <ul className="divide-y divide-gray-200">
+          {members.map((member, index) => (
+            <li key={index} className="py-4 flex items-center justify-between">
+              <div>
+                <p className="text-gray-800 font-medium">{member.email}</p>
+                <p className="text-sm text-gray-500">Role: {member.role}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">
+                  Joined At: {member.joinedAt ? new Date(member.joinedAt).toLocaleDateString() : 'N/A'}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr>
-              <th className="border-b-2 p-2">
-                <input type="checkbox" className="bg-white" />
-              </th>
-              <th className="border-b-2 p-2">Email</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.length > 0 ? (
-              members.map((email, index) => (
-                <tr key={index}>
-                  <td className="border-b p-2">
-                    <input type="checkbox" className="bg-white" />
-                  </td>
-                  <td className="border-b p-2">{email}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="2" className="p-4 text-center text-gray-600">
-                  No members found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <p className="text-gray-600 text-center">No members found.</p>
       )}
 
       {isModalOpen && (
         <AddMemberModal
-          teamId={teamId} 
+          teamId={teamId}
           onClose={() => setIsModalOpen(false)}
+          onMemberAdded={(newMember) => setMembers((prev) => [...prev, newMember])}
         />
       )}
     </div>

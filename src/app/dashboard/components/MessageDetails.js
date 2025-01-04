@@ -363,10 +363,11 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
       iframeDoc.write(selectedMessage.body || "<p>No email body content found</p>");
       iframeDoc.close();
     }
-
+  
     handleSentimentAnalysis();
-    detectEventInEmail();
+    detectEventInEmail(); // Invoke the event detection function
   }, [selectedMessage]);
+  
 
   if (!selectedMessage) return null;
 
@@ -379,10 +380,10 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
           emailContent: selectedMessage.body,
         }),
       });
-
+  
       const data = await response.json();
-      if (data.eventDetected && Array.isArray(data.events)) {
-        setEventPrompt(data.events);
+      if (data.eventDetected && data.event) {
+        setEventPrompt([data.event]); // Wrap the single event object in an array
       } else {
         setEventPrompt([]);
       }
@@ -390,6 +391,8 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
       console.error('Error detecting event:', error);
     }
   };
+  
+  
 
   const handleAddEventToCalendar = async (event) => {
     try {
@@ -561,25 +564,35 @@ const MessageDetails = ({ selectedMessage, handleCloseMessage, onDeleteMessage }
       </div>
 
       {eventPrompt.length > 0 && (
-        <div className="bg-blue-50 p-4 rounded-lg shadow-md mb-4">
-          <h4 className="font-semibold text-blue-800">Detected Events:</h4>
-          <ul>
-            {eventPrompt.map((event, index) => (
-              <li key={index} className="my-2">
-                <p className="text-blue-800">
-                  <strong>{event.title}</strong> on {event.date} from {event.startTime} to {event.endTime}
-                </p>
-                <button
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-2"
-                  onClick={() => handleAddEventToCalendar(event)}
-                >
-                  Add to Calendar
-                </button>
-              </li>
-            ))}
-          </ul>
+  <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+    <h4 className="text-xl font-bold text-blue-800 mb-4">📅 Event Details Detected</h4>
+    <div className="space-y-4">
+      {eventPrompt.map((event, index) => (
+        <div
+          key={index}
+          className="flex justify-between items-center p-4 border rounded-lg hover:bg-blue-50 transition-all"
+        >
+          <div>
+            <h5 className="text-lg font-semibold text-blue-600">{event.title}</h5>
+            <p className="text-gray-600">
+              📅 <span className="font-medium">{event.date}</span> at{" "}
+              <span className="font-medium">{event.time}</span>
+            </p>
+          </div>
+          <button
+            className="bg-blue-600 text-white px-5 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition-all"
+            onClick={() => handleAddEventToCalendar(event)}
+          >
+            Add to Calendar
+          </button>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
+
+
+
 
       <div className="flex items-center justify-between mb-4 bg-gray-50 p-4 rounded-md shadow-sm">
         <div>

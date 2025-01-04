@@ -90,7 +90,7 @@ const Navbar = () => {
         {/* Logo on the left */}
         <div className="flex items-center">
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-            MailMinds
+            InboxIQ
           </h1>
         </div>
 

@@ -846,55 +846,48 @@ const DashboardPage = () => {
 
   const fetchEmails = async (label, email, query = '', pageToken = null) => {
     try {
-      const url = `/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(email)}${query ? `&query=${encodeURIComponent(query)}` : ''
-        }${pageToken ? `&pageToken=${pageToken}` : ''}`;
-
+      const url = `/api/auth/google/fetchEmails?label=${label}&email=${encodeURIComponent(email)}${query ? `&query=${encodeURIComponent(query)}` : ''}${pageToken ? `&pageToken=${pageToken}` : ''}`;
+  
       console.log('Fetching emails with URL:', url);
       const response = await fetch(url);
       const data = await response.json();
-      setEmails(data.messages || []);
+  
+      const emailsWithPriority = await classifyEmails(data.messages || []);
+      setEmails(emailsWithPriority);
     } catch (error) {
       console.error('Error fetching emails:', error.message);
     }
   };
-
+  
   const classifyEmails = async (emails) => {
-    const classifiedEmails = [];
-
-    for (const email of emails) {
-      try {
-        const emailContent = {
-          subject: truncateContent(email.subject || '', 800),
-          body: truncateContent(email.snippet || '', 800),
-        };
-
-        console.log('Sending email for classification:', emailContent);
-
-        const response = await fetch('/api/ai/email/classifyEmail', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: emailContent }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Classification failed');
+    const classifiedEmails = await Promise.all(
+      emails.map(async (email) => {
+        try {
+          const emailContent = {
+            subject: truncateContent(email.subject || '', 800),
+            body: truncateContent(email.snippet || '', 800),
+          };
+  
+          const response = await fetch('/api/ai/email/classifyEmail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailContent }),
+          });
+  
+          if (!response.ok) throw new Error('Classification failed');
+  
+          const { priority } = await response.json();
+          return { ...email, priority };
+        } catch (error) {
+          console.error('Error classifying email:', error.message);
+          return { ...email, priority: 'Low Priority' };
         }
-
-        const { priority } = await response.json();
-        classifiedEmails.push({ ...email, priority });
-      } catch (error) {
-        if (error.message.includes('context_length_exceeded')) {
-          console.warn(`Skipping email with ID ${email.id} due to token limit`);
-          classifiedEmails.push({ ...email, priority: 'Low Priority' });
-        } else {
-          console.error(`Error classifying email with ID ${email.id}:`, error.message);
-          classifiedEmails.push({ ...email, priority: 'Low Priority' });
-        }
-      }
-    }
-
+      })
+    );
+  
     return classifiedEmails;
   };
+  
 
   const truncateContent = (text, limit) => {
     return text.length > limit ? text.slice(0, limit - 1) + '…' : text;
@@ -1161,11 +1154,11 @@ const DashboardPage = () => {
                         </h2>
                         {email.priority && (
                           <FaExclamationCircle
-                            className={`${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'
-                              }`}
+                            className={`${email.priority === 'High Priority' ? 'text-red-500' : 'text-green-500'}`}
                             size={20}
                           />
                         )}
+
                       </div>
                       <p className="text-sm text-gray-600 mt-1">From: {email.from}</p>
                       <p className="text-gray-700 mt-2 line-clamp-2">{email.snippet}</p>
