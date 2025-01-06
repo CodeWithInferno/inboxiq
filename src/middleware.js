@@ -311,7 +311,7 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { withMiddlewareAuthRequired, getSession } from '@auth0/nextjs-auth0/edge';
-import { connectToDatabase } from './src/lib/mongodb.js';
+import { connectToDatabase } from './lib/mongodb';
 
 /* ------------------------------------
  * 1. Initialize Redis client
